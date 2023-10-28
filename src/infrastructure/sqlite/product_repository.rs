@@ -2,11 +2,12 @@ use std::sync::{Arc, Mutex};
 
 use crate::domain::product::{Product, ProductId};
 use crate::repositories::ProductRepository as ProductRepositoryTrait;
-use rusqlite::{named_params, params, Connection, OptionalExtension};
+use rusqlite::{named_params, Connection, OptionalExtension};
 
 /// A repository for [`Product`]s using SQLite as the underlying storage.
 pub struct ProductRepository {
-    // The connection to the database
+    /// The connection to the database. This is wrapped in an [`Arc`] and a [`Mutex`] to allow multiple repos to use the
+    /// same connection
     connection: Arc<Mutex<Connection>>,
 }
 
@@ -16,31 +17,13 @@ impl ProductRepository {
     /// # Errors
     ///
     /// This function will return an error if the table creation fails.
-    pub fn new(connection: Arc<Mutex<Connection>>) -> Result<ProductRepository, rusqlite::Error> {
-        let repo = Self { connection };
-
-        // Create the table if it doesn't exist
-        repo.create_table_if_not_exists()?;
-
-        Ok(repo)
+    pub fn new(connection: Arc<Mutex<Connection>>) -> Self {
+        Self { connection }
     }
 
-    /// Creates the table for this [`ProductRepository`].
-    ///
-    /// # Errors
-    ///
-    /// This function will return an error if the table creation fails.
-    fn create_table_if_not_exists(&self) -> Result<(), rusqlite::Error> {
-        self.connection.lock().unwrap().execute(
-            "CREATE TABLE IF NOT EXISTS products (
-                    id TEXT PRIMARY KEY,
-                    brand TEXT NOT NULL,
-                    name TEXT NOT NULL
-                )",
-            params![],
-        )?;
-
-        Ok(())
+    /// Shortcut to get the connection to the database
+    fn conn(&self) -> std::sync::MutexGuard<Connection> {
+        self.connection.lock().unwrap()
     }
 }
 
@@ -48,9 +31,7 @@ impl ProductRepositoryTrait for ProductRepository {
     type Error = rusqlite::Error;
 
     fn find_by_id(&self, id: &ProductId) -> Result<Option<Product>, Self::Error> {
-        self.connection
-            .lock()
-            .unwrap()
+        self.conn()
             .prepare("SELECT id, brand, name FROM products WHERE id = :id")?
             .query_row(named_params! { ":id": id.as_str() }, |row| {
                 let id = row.get::<_, String>(0)?;
@@ -67,7 +48,7 @@ impl ProductRepositoryTrait for ProductRepository {
     }
 
     fn save(&self, product: &Product) -> Result<(), Self::Error> {
-        self.connection.lock().unwrap().execute(
+        self.conn().execute(
             "INSERT INTO products (id, brand, name) VALUES (:id, :brand, :name) ON CONFLICT(id) DO UPDATE SET brand = :brand, name = :name",
             named_params! {
                 ":id": product.id().as_str(),
@@ -83,11 +64,13 @@ impl ProductRepositoryTrait for ProductRepository {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::product::ProductId;
+    use crate::{domain::product::ProductId, infrastructure::sqlite::setup_db};
 
     fn get_repo() -> ProductRepository {
         let connection = Connection::open_in_memory().unwrap();
-        ProductRepository::new(Arc::new(Mutex::new(connection))).unwrap()
+        setup_db(&connection).unwrap();
+
+        ProductRepository::new(Arc::new(Mutex::new(connection)))
     }
 
     #[test]

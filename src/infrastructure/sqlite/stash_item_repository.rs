@@ -5,11 +5,12 @@ use crate::domain::{product::ProductId, stash_item::StashItem};
 use crate::repositories::StashItemRepository as StashItemRepositoryTrait;
 
 use chrono::NaiveDate;
-use rusqlite::{named_params, params, Connection, OptionalExtension};
+use rusqlite::{named_params, Connection, OptionalExtension};
 
 /// A repository for [`StashItem`]s.
-struct StashItemRepository {
-    // The connection to the database
+pub struct StashItemRepository {
+    /// The connection to the database. This is wrapped in an [`Arc`] and a [`Mutex`] to allow multiple repos to use the
+    /// same connection
     connection: Arc<Mutex<Connection>>,
 }
 
@@ -19,32 +20,13 @@ impl StashItemRepository {
     /// # Errors
     ///
     /// This function will return an error if the table creation fails.
-    pub fn new(connection: Arc<Mutex<Connection>>) -> Result<StashItemRepository, rusqlite::Error> {
-        let repo = Self { connection };
-
-        // Create the table if it doesn't exist
-        repo.create_table_if_not_exists()?;
-
-        Ok(repo)
+    pub fn new(connection: Arc<Mutex<Connection>>) -> Self {
+        Self { connection }
     }
 
-    /// Creates the table for this [`StashItemRepository`].
-    ///
-    /// # Errors
-    ///
-    /// This function will return an error if the table creation fails.
-    fn create_table_if_not_exists(&self) -> Result<(), rusqlite::Error> {
-        self.connection.lock().unwrap().execute(
-            "CREATE TABLE IF NOT EXISTS stash_items (
-                    id TEXT PRIMARY KEY,
-                    product_id TEXT NOT NULL,
-                    quantity INTEGER NOT NULL,
-                    expiry_date TEXT NOT NULL
-                )",
-            params![],
-        )?;
-
-        Ok(())
+    /// Shortcut to get the connection to the database
+    fn conn(&self) -> std::sync::MutexGuard<Connection> {
+        self.connection.lock().unwrap()
     }
 }
 
@@ -52,9 +34,7 @@ impl StashItemRepositoryTrait for StashItemRepository {
     type Error = rusqlite::Error;
 
     fn find_by_id(&self, id: &StashItemId) -> Result<Option<StashItem>, Self::Error> {
-        self.connection
-            .lock()
-            .unwrap()
+        self.conn()
             .prepare(
                 "SELECT id, product_id, quantity, expiry_date FROM stash_items WHERE id = :id",
             )?
@@ -75,7 +55,7 @@ impl StashItemRepositoryTrait for StashItemRepository {
     }
 
     fn save(&self, stash_item: StashItem) -> Result<(), Self::Error> {
-        self.connection.lock().unwrap().execute(
+        self.conn().execute(
             "INSERT INTO stash_items (id, product_id, quantity, expiry_date) VALUES (:id, :product_id, :quantity, :expiry_date)
             ON CONFLICT(id) DO UPDATE SET product_id = :product_id, quantity = :quantity, expiry_date = :expiry_date",
             named_params! {
@@ -92,12 +72,39 @@ impl StashItemRepositoryTrait for StashItemRepository {
 
 #[cfg(test)]
 mod tests {
+    use crate::{
+        domain::product::Product,
+        infrastructure::sqlite::{setup_db, ProductRepository},
+        repositories::ProductRepository as ProductRepositoryTrait,
+    };
+
     use super::*;
     use chrono::NaiveDate;
 
+    static DUMMY_PRODUCT_ID: &str = "ID";
+
     fn get_repo() -> StashItemRepository {
+        // Create the database the repo(s) will use
         let connection = Connection::open_in_memory().unwrap();
-        StashItemRepository::new(Arc::new(Mutex::new(connection))).unwrap()
+        setup_db(&connection).unwrap();
+
+        // Wrap the connection in an Arc and a Mutex so it can be shared between repos
+        let shared_connection = Arc::new(Mutex::new(connection));
+
+        // Create the repos
+        let product_repository = ProductRepository::new(shared_connection.clone());
+        let stash_item_repository = StashItemRepository::new(shared_connection.clone());
+
+        // Save a dummy product so we don't get foreign key violations in the tests
+        product_repository
+            .save(&Product::new(
+                ProductId::new(DUMMY_PRODUCT_ID).unwrap(),
+                "BRAND",
+                "NAME",
+            ))
+            .unwrap();
+
+        stash_item_repository
     }
 
     #[test]
@@ -106,7 +113,7 @@ mod tests {
 
         let stash_item = StashItem::new(
             StashItemId::new("ID").unwrap(),
-            ProductId::new("ID").unwrap(),
+            ProductId::new(DUMMY_PRODUCT_ID).unwrap(),
             1,
             NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
         );
@@ -135,7 +142,7 @@ mod tests {
 
         let stash_item = StashItem::new(
             StashItemId::new("ID").unwrap(),
-            ProductId::new("ID").unwrap(),
+            ProductId::new(DUMMY_PRODUCT_ID).unwrap(),
             1,
             NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
         );
@@ -153,7 +160,7 @@ mod tests {
 
         let stash_item = StashItem::new(
             StashItemId::new("ID").unwrap(),
-            ProductId::new("ID").unwrap(),
+            ProductId::new(DUMMY_PRODUCT_ID).unwrap(),
             1,
             NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
         );
@@ -162,7 +169,7 @@ mod tests {
 
         let updated_stash_item = StashItem::new(
             stash_item.id().clone(),
-            ProductId::new("ID").unwrap(),
+            ProductId::new(DUMMY_PRODUCT_ID).unwrap(),
             2,
             NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
         );
@@ -172,5 +179,21 @@ mod tests {
         let found_stash_item = repo.find_by_id(stash_item.id()).unwrap().unwrap();
 
         assert_eq!(updated_stash_item, found_stash_item);
+    }
+
+    #[test]
+    fn test_save_bad_product_id() {
+        let repo = get_repo();
+
+        let stash_item = StashItem::new(
+            StashItemId::new("ID").unwrap(),
+            ProductId::new("BAD_ID").unwrap(),
+            1,
+            NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
+        );
+
+        let result = repo.save(stash_item);
+
+        assert!(result.is_err());
     }
 }
