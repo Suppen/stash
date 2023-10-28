@@ -1,0 +1,5 @@
+mod product;
+mod product_id;
+
+pub use product::Product;
+pub use product_id::ProductId;
