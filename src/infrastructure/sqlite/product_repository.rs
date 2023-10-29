@@ -5,7 +5,9 @@ use crate::domain::entity::Entity;
 use crate::domain::product::{Product, ProductId};
 use crate::domain::value_object::ValueObject;
 use crate::repositories::ProductRepository as ProductRepositoryTrait;
-use rusqlite::{named_params, Connection, OptionalExtension};
+use rusqlite::{named_params, Connection};
+
+use super::product_repository_error::ProductRepositoryError;
 
 /// A repository for [`Product`]s using SQLite as the underlying storage.
 pub struct ProductRepository {
@@ -31,23 +33,29 @@ impl ProductRepository {
 }
 
 impl ProductRepositoryTrait for ProductRepository {
-    type Error = rusqlite::Error;
+    type Error = ProductRepositoryError;
 
     fn find_by_id(&self, id: &ProductId) -> Result<Option<Product>, Self::Error> {
-        self.conn()
-            .prepare("SELECT id, brand, name FROM products WHERE id = :id")?
-            .query_row(named_params! { ":id": id.value() }, |row| {
-                let id = row.get::<_, String>("id")?;
-                let brand = row.get::<_, String>("brand")?;
-                let name = row.get::<_, String>("name")?;
+        let conn = self.conn();
+        let mut stmt =
+            conn.prepare("SELECT id, brand, name FROM products WHERE id = :id LIMIT 1")?;
+        let mut rows = stmt.query(named_params! { ":id": id.value() })?;
 
-                Ok(Product::new(
-                    ProductId::new(id).expect("Invalid product id"),
-                    Brand::new(brand).expect("Invalid brand"),
-                    &name,
-                ))
-            })
-            .optional()
+        let row = rows.next()?;
+
+        if let Some(row) = row {
+            let id = row.get::<_, String>("id")?;
+            let brand = row.get::<_, String>("brand")?;
+            let name = row.get::<_, String>("name")?;
+
+            Ok(Some(Product::new(
+                ProductId::new(id)?,
+                Brand::new(brand)?,
+                &name,
+            )))
+        } else {
+            Ok(None)
+        }
     }
 
     fn save(&self, product: &Product) -> Result<(), Self::Error> {

@@ -1,6 +1,7 @@
 use crate::domain::product::{Product, ProductId};
 
 pub trait ProductRepository {
+    /// The error type that is returned by the repository
     type Error;
 
     /// Returns one product by id
