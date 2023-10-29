@@ -30,6 +30,20 @@ impl ProductRepository {
     fn conn(&self) -> std::sync::MutexGuard<Connection> {
         self.connection.lock().unwrap()
     }
+
+    /// Converts a raw database row into a [`Product`]
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if the row contains invalid data, or if the data cannot be parsed into a
+    /// [`Product`]
+    fn row_to_product(row: &rusqlite::Row) -> Result<Product, ProductRepositoryError> {
+        let id = row.get::<_, String>("id")?;
+        let brand = row.get::<_, String>("brand")?;
+        let name = row.get::<_, String>("name")?;
+
+        Ok(Product::new(ProductId::new(id)?, Brand::new(brand)?, &name))
+    }
 }
 
 impl ProductRepositoryTrait for ProductRepository {
@@ -44,15 +58,7 @@ impl ProductRepositoryTrait for ProductRepository {
         let row = rows.next()?;
 
         if let Some(row) = row {
-            let id = row.get::<_, String>("id")?;
-            let brand = row.get::<_, String>("brand")?;
-            let name = row.get::<_, String>("name")?;
-
-            Ok(Some(Product::new(
-                ProductId::new(id)?,
-                Brand::new(brand)?,
-                &name,
-            )))
+            ProductRepository::row_to_product(&row).map(Some)
         } else {
             Ok(None)
         }

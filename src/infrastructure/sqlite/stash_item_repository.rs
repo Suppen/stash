@@ -31,6 +31,21 @@ impl StashItemRepository {
     fn conn(&self) -> std::sync::MutexGuard<Connection> {
         self.connection.lock().unwrap()
     }
+
+    /// Converts a raw database row into a [`StashItem`]
+    fn row_to_stash_item(row: &rusqlite::Row) -> Result<StashItem, StashItemRepositoryError> {
+        let id = row.get::<_, String>("id")?;
+        let product_id = row.get::<_, String>("product_id")?;
+        let quantity = row.get::<_, i64>("quantity")?;
+        let expiry_date = row.get::<_, NaiveDate>("expiry_date")?;
+
+        Ok(StashItem::new(
+            StashItemId::new(id)?,
+            ProductId::new(product_id)?,
+            quantity,
+            expiry_date,
+        ))
+    }
 }
 
 impl StashItemRepositoryTrait for StashItemRepository {
@@ -46,17 +61,7 @@ impl StashItemRepositoryTrait for StashItemRepository {
         let row = rows.next()?;
 
         if let Some(row) = row {
-            let id = row.get::<_, String>("id")?;
-            let product_id = row.get::<_, String>("product_id")?;
-            let quantity = row.get::<_, i64>("quantity")?;
-            let expiry_date = row.get::<_, NaiveDate>("expiry_date")?;
-
-            Ok(Some(StashItem::new(
-                StashItemId::new(id)?,
-                ProductId::new(product_id)?,
-                quantity,
-                expiry_date,
-            )))
+            StashItemRepository::row_to_stash_item(&row).map(Some)
         } else {
             Ok(None)
         }
