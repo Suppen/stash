@@ -37,9 +37,9 @@ impl ProductRepositoryTrait for ProductRepository {
         self.conn()
             .prepare("SELECT id, brand, name FROM products WHERE id = :id")?
             .query_row(named_params! { ":id": id.value() }, |row| {
-                let id = row.get::<_, String>(0)?;
-                let brand = row.get::<_, String>(1)?;
-                let name = row.get::<_, String>(2)?;
+                let id = row.get::<_, String>("id")?;
+                let brand = row.get::<_, String>("brand")?;
+                let name = row.get::<_, String>("name")?;
 
                 Ok(Product::new(
                     ProductId::new(id).expect("Invalid product id"),

@@ -40,10 +40,10 @@ impl StashItemRepositoryTrait for StashItemRepository {
                 "SELECT id, product_id, quantity, expiry_date FROM stash_items WHERE id = :id",
             )?
             .query_row(named_params! { ":id": id.value() }, |row| {
-                let id = row.get::<_, String>(0)?;
-                let product_id = row.get::<_, String>(1)?;
-                let quantity = row.get::<_, i64>(2)?;
-                let expiry_date = row.get::<_, NaiveDate>(3)?;
+                let id = row.get::<_, String>("id")?;
+                let product_id = row.get::<_, String>("product_id")?;
+                let quantity = row.get::<_, i64>("quantity")?;
+                let expiry_date = row.get::<_, NaiveDate>("expiry_date")?;
 
                 Ok(StashItem::new(
                     StashItemId::new(id).expect("Invalid stash item id"),
