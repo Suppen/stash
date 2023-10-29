@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use crate::domain::stash_item::StashItemId;
+use crate::domain::value_object::ValueObject;
 use crate::domain::{product::ProductId, stash_item::StashItem};
 use crate::repositories::StashItemRepository as StashItemRepositoryTrait;
 
@@ -38,15 +39,15 @@ impl StashItemRepositoryTrait for StashItemRepository {
             .prepare(
                 "SELECT id, product_id, quantity, expiry_date FROM stash_items WHERE id = :id",
             )?
-            .query_row(named_params! { ":id": id.as_str() }, |row| {
+            .query_row(named_params! { ":id": id.value() }, |row| {
                 let id = row.get::<_, String>(0)?;
                 let product_id = row.get::<_, String>(1)?;
                 let quantity = row.get::<_, i64>(2)?;
                 let expiry_date = row.get::<_, NaiveDate>(3)?;
 
                 Ok(StashItem::new(
-                    StashItemId::new(&id).expect("Invalid stash item id"),
-                    ProductId::new(&product_id).expect("Invalid product id"),
+                    StashItemId::new(id).expect("Invalid stash item id"),
+                    ProductId::new(product_id).expect("Invalid product id"),
                     quantity,
                     expiry_date,
                 ))
@@ -59,8 +60,8 @@ impl StashItemRepositoryTrait for StashItemRepository {
             "INSERT INTO stash_items (id, product_id, quantity, expiry_date) VALUES (:id, :product_id, :quantity, :expiry_date)
             ON CONFLICT(id) DO UPDATE SET product_id = :product_id, quantity = :quantity, expiry_date = :expiry_date",
             named_params! {
-                ":id": stash_item.id().as_str(),
-                ":product_id": stash_item.product_id().as_str(),
+                ":id": stash_item.id().value(),
+                ":product_id": stash_item.product_id().value(),
                 ":quantity": stash_item.quantity(),
                 ":expiry_date": stash_item.expiry_date().to_string(),
             },
@@ -72,7 +73,7 @@ impl StashItemRepositoryTrait for StashItemRepository {
     fn delete(&self, id: &StashItemId) -> Result<(), Self::Error> {
         self.conn().execute(
             "DELETE FROM stash_items WHERE id = :id",
-            named_params! { ":id": id.as_str() },
+            named_params! { ":id": id.value() },
         )?;
 
         Ok(())
@@ -82,15 +83,13 @@ impl StashItemRepositoryTrait for StashItemRepository {
 #[cfg(test)]
 mod tests {
     use crate::{
-        domain::{brand::Brand, product::Product},
+        domain::{brand::Brand, product::Product, value_object::ValueObject},
         infrastructure::sqlite::{setup_db, ProductRepository},
         repositories::ProductRepository as ProductRepositoryTrait,
     };
 
     use super::*;
     use chrono::NaiveDate;
-
-    static DUMMY_PRODUCT_ID: &str = "ID";
 
     fn get_repo() -> StashItemRepository {
         // Create the database the repo(s) will use
@@ -107,8 +106,8 @@ mod tests {
         // Save a dummy product so we don't get foreign key violations in the tests
         product_repository
             .save(&Product::new(
-                ProductId::new(DUMMY_PRODUCT_ID).unwrap(),
-                Brand::new("BRAND").unwrap(),
+                ProductId::new(String::from("ID")).unwrap(),
+                Brand::new(String::from("BRAND")).unwrap(),
                 "NAME",
             ))
             .unwrap();
@@ -121,8 +120,8 @@ mod tests {
         let repo = get_repo();
 
         let stash_item = StashItem::new(
-            StashItemId::new("ID").unwrap(),
-            ProductId::new(DUMMY_PRODUCT_ID).unwrap(),
+            StashItemId::new(String::from("ID")).unwrap(),
+            ProductId::new(String::from("ID")).unwrap(),
             1,
             NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
         );
@@ -138,7 +137,7 @@ mod tests {
     fn test_find_by_id_not_found() {
         let repo = get_repo();
 
-        let stash_item_id = StashItemId::new("ID").unwrap();
+        let stash_item_id = StashItemId::new(String::from("ID")).unwrap();
 
         let found_stash_item = repo.find_by_id(&stash_item_id).unwrap();
 
@@ -150,8 +149,8 @@ mod tests {
         let repo = get_repo();
 
         let stash_item = StashItem::new(
-            StashItemId::new("ID").unwrap(),
-            ProductId::new(DUMMY_PRODUCT_ID).unwrap(),
+            StashItemId::new(String::from("ID")).unwrap(),
+            ProductId::new(String::from("ID")).unwrap(),
             1,
             NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
         );
@@ -168,8 +167,8 @@ mod tests {
         let repo = get_repo();
 
         let stash_item = StashItem::new(
-            StashItemId::new("ID").unwrap(),
-            ProductId::new(DUMMY_PRODUCT_ID).unwrap(),
+            StashItemId::new(String::from("ID")).unwrap(),
+            ProductId::new(String::from("ID")).unwrap(),
             1,
             NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
         );
@@ -178,7 +177,7 @@ mod tests {
 
         let updated_stash_item = StashItem::new(
             stash_item.id().clone(),
-            ProductId::new(DUMMY_PRODUCT_ID).unwrap(),
+            ProductId::new(String::from("ID")).unwrap(),
             2,
             NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
         );
@@ -195,8 +194,8 @@ mod tests {
         let repo = get_repo();
 
         let stash_item = StashItem::new(
-            StashItemId::new("ID").unwrap(),
-            ProductId::new("BAD_ID").unwrap(),
+            StashItemId::new(String::from("ID")).unwrap(),
+            ProductId::new(String::from("BAD_ID")).unwrap(),
             1,
             NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
         );
@@ -211,8 +210,8 @@ mod tests {
         let repo = get_repo();
 
         let stash_item = StashItem::new(
-            StashItemId::new("ID").unwrap(),
-            ProductId::new(DUMMY_PRODUCT_ID).unwrap(),
+            StashItemId::new(String::from("ID")).unwrap(),
+            ProductId::new(String::from("ID")).unwrap(),
             1,
             NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
         );
@@ -230,7 +229,7 @@ mod tests {
     fn test_delete_not_found() {
         let repo = get_repo();
 
-        let stash_item_id = StashItemId::new("ID").unwrap();
+        let stash_item_id = StashItemId::new(String::from("ID")).unwrap();
 
         let result = repo.delete(&stash_item_id);
 

@@ -1,17 +1,28 @@
+use crate::domain::value_object::ValueObject;
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ProductId(String);
 
-impl ProductId {
-    pub fn new(id: &str) -> Result<ProductId, String> {
-        if id.len() == 0 {
-            Err("Product id cannot be empty".to_string())
+impl ValueObject<String> for ProductId {
+    fn new(value: String) -> Result<Self, Box<dyn std::error::Error>> {
+        if value.len() == 0 {
+            Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "ProductId cannot be empty",
+            )))
         } else {
-            Ok(ProductId(id.to_string()))
+            Ok(ProductId(value))
         }
     }
 
-    pub fn as_str(&self) -> &str {
+    fn value(&self) -> &String {
         &self.0
+    }
+}
+
+impl std::fmt::Display for ProductId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.value())
     }
 }
 
@@ -21,22 +32,22 @@ mod tests {
 
     #[test]
     fn test_new() {
-        let product_id = ProductId::new("ID").unwrap();
+        let product_id = ProductId::new(String::from("ID")).unwrap();
 
-        assert_eq!(product_id.as_str(), "ID");
+        assert_eq!(product_id.value(), "ID");
     }
 
     #[test]
     fn test_new_empty() {
-        let product_id = ProductId::new("");
+        let product_id = ProductId::new(String::from(""));
 
         assert!(product_id.is_err());
     }
 
     #[test]
     fn test_as_str() {
-        let product_id = ProductId::new("ID").unwrap();
+        let product_id = ProductId::new(String::from("ID")).unwrap();
 
-        assert_eq!(product_id.as_str(), "ID");
+        assert_eq!(product_id.value(), "ID");
     }
 }

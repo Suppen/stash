@@ -2,6 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::domain::brand::Brand;
 use crate::domain::product::{Product, ProductId};
+use crate::domain::value_object::ValueObject;
 use crate::repositories::ProductRepository as ProductRepositoryTrait;
 use rusqlite::{named_params, Connection, OptionalExtension};
 
@@ -34,14 +35,14 @@ impl ProductRepositoryTrait for ProductRepository {
     fn find_by_id(&self, id: &ProductId) -> Result<Option<Product>, Self::Error> {
         self.conn()
             .prepare("SELECT id, brand, name FROM products WHERE id = :id")?
-            .query_row(named_params! { ":id": id.as_str() }, |row| {
+            .query_row(named_params! { ":id": id.value() }, |row| {
                 let id = row.get::<_, String>(0)?;
                 let brand = row.get::<_, String>(1)?;
                 let name = row.get::<_, String>(2)?;
 
                 Ok(Product::new(
-                    ProductId::new(&id).expect("Invalid product id"),
-                    Brand::new(&brand).expect("Invalid brand"),
+                    ProductId::new(id).expect("Invalid product id"),
+                    Brand::new(brand).expect("Invalid brand"),
                     &name,
                 ))
             })
@@ -52,8 +53,8 @@ impl ProductRepositoryTrait for ProductRepository {
         self.conn().execute(
             "INSERT INTO products (id, brand, name) VALUES (:id, :brand, :name) ON CONFLICT(id) DO UPDATE SET brand = :brand, name = :name",
             named_params! {
-                ":id": product.id().as_str(),
-                ":brand": product.brand().as_str(),
+                ":id": product.id().value(),
+                ":brand": product.brand().value(),
                 ":name": product.name(),
             },
         )?;
@@ -78,8 +79,12 @@ mod tests {
     fn test_find_by_id() {
         let repo = get_repo();
 
-        let product_id = ProductId::new("ID").unwrap();
-        let product = Product::new(product_id.clone(), Brand::new("BRAND").unwrap(), "NAME");
+        let product_id = ProductId::new(String::from("ID")).unwrap();
+        let product = Product::new(
+            product_id.clone(),
+            Brand::new(String::from("BRAND")).unwrap(),
+            "NAME",
+        );
 
         repo.save(&product).unwrap();
 
@@ -92,7 +97,7 @@ mod tests {
     fn test_find_by_id_not_found() {
         let repo = get_repo();
 
-        let product_id = ProductId::new("ID").unwrap();
+        let product_id = ProductId::new(String::from("ID")).unwrap();
 
         let found_product = repo.find_by_id(&product_id).unwrap();
 
@@ -103,8 +108,12 @@ mod tests {
     fn test_save() {
         let repo = get_repo();
 
-        let product_id = ProductId::new("ID").unwrap();
-        let product = Product::new(product_id.clone(), Brand::new("BRAND").unwrap(), "NAME");
+        let product_id = ProductId::new(String::from("ID")).unwrap();
+        let product = Product::new(
+            product_id.clone(),
+            Brand::new(String::from("BRAND")).unwrap(),
+            "NAME",
+        );
 
         repo.save(&product).unwrap();
 
@@ -117,13 +126,20 @@ mod tests {
     fn test_save_update() {
         let repo = get_repo();
 
-        let product_id = ProductId::new("ID").unwrap();
-        let product = Product::new(product_id.clone(), Brand::new("BRAND").unwrap(), "NAME");
+        let product_id = ProductId::new(String::from("ID")).unwrap();
+        let product = Product::new(
+            product_id.clone(),
+            Brand::new(String::from("BRAND")).unwrap(),
+            "NAME",
+        );
 
         repo.save(&product).unwrap();
 
-        let updated_product =
-            Product::new(product_id.clone(), Brand::new("BRAND2").unwrap(), "NAME2");
+        let updated_product = Product::new(
+            product_id.clone(),
+            Brand::new(String::from("BRAND2")).unwrap(),
+            "NAME2",
+        );
 
         repo.save(&updated_product).unwrap();
 

@@ -1,16 +1,21 @@
+use crate::domain::value_object::ValueObject;
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct StashItemId(String);
 
-impl StashItemId {
-    pub fn new(id: &str) -> Result<StashItemId, String> {
-        if id.len() == 0 {
-            Err("Product id cannot be empty".to_string())
+impl ValueObject<String> for StashItemId {
+    fn new(value: String) -> Result<StashItemId, Box<dyn std::error::Error>> {
+        if value.len() == 0 {
+            Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "Stash item ID cannot be empty",
+            )))
         } else {
-            Ok(StashItemId(id.to_string()))
+            Ok(StashItemId(value))
         }
     }
 
-    pub fn as_str(&self) -> &str {
+    fn value(&self) -> &String {
         &self.0
     }
 }
@@ -21,22 +26,22 @@ mod tests {
 
     #[test]
     fn test_new() {
-        let stash_item_id = StashItemId::new("ID").unwrap();
+        let stash_item_id = StashItemId::new(String::from("ID")).unwrap();
 
-        assert_eq!(stash_item_id.as_str(), "ID");
+        assert_eq!(stash_item_id.value(), "ID");
     }
 
     #[test]
     fn test_new_empty() {
-        let stash_item_id = StashItemId::new("");
+        let stash_item_id = StashItemId::new(String::from(""));
 
         assert!(stash_item_id.is_err());
     }
 
     #[test]
     fn test_as_str() {
-        let stash_item_id = StashItemId::new("ID").unwrap();
+        let stash_item_id = StashItemId::new(String::from("ID")).unwrap();
 
-        assert_eq!(stash_item_id.as_str(), "ID");
+        assert_eq!(stash_item_id.value(), "ID");
     }
 }

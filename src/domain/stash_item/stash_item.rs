@@ -58,15 +58,17 @@ impl StashItem {
 
 #[cfg(test)]
 mod tests {
+    use crate::domain::value_object::ValueObject;
+
     use super::*;
     use chrono::NaiveDate;
 
     #[test]
     fn test_product_id() {
-        let product_id = ProductId::new("ID").unwrap();
+        let product_id = ProductId::new(String::from("ID")).unwrap();
 
         let item = StashItem::new(
-            StashItemId::new("ID").unwrap(),
+            StashItemId::new(String::from("ID")).unwrap(),
             product_id.clone(),
             1,
             NaiveDate::from_ymd_opt(2023, 10, 28).unwrap(),
@@ -80,8 +82,8 @@ mod tests {
         let quantity = 5;
 
         let item = StashItem::new(
-            StashItemId::new("ID").unwrap(),
-            ProductId::new("ID").unwrap(),
+            StashItemId::new(String::from("ID")).unwrap(),
+            ProductId::new(String::from("ID")).unwrap(),
             quantity,
             NaiveDate::from_ymd_opt(2023, 10, 28).unwrap(),
         );
@@ -94,8 +96,8 @@ mod tests {
         let expires = NaiveDate::from_ymd_opt(2023, 10, 28).unwrap();
 
         let item = StashItem::new(
-            StashItemId::new("ID").unwrap(),
-            ProductId::new("ID").unwrap(),
+            StashItemId::new(String::from("ID")).unwrap(),
+            ProductId::new(String::from("ID")).unwrap(),
             1,
             expires,
         );
