@@ -1,4 +1,4 @@
-use crate::domain::brand::Brand;
+use crate::domain::{brand::Brand, entity::Entity};
 
 use super::ProductId;
 
@@ -18,16 +18,18 @@ impl Product {
         }
     }
 
-    pub fn id(&self) -> &ProductId {
-        &self.id
-    }
-
     pub fn brand(&self) -> &Brand {
         &self.brand
     }
 
     pub fn name(&self) -> &str {
         &self.name
+    }
+}
+
+impl Entity<ProductId> for Product {
+    fn id(&self) -> &ProductId {
+        &self.id
     }
 }
 

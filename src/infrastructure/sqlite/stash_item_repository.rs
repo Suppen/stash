@@ -1,12 +1,12 @@
+use chrono::NaiveDate;
+use rusqlite::{named_params, Connection, OptionalExtension};
 use std::sync::{Arc, Mutex};
 
+use crate::domain::entity::Entity;
 use crate::domain::stash_item::StashItemId;
 use crate::domain::value_object::ValueObject;
 use crate::domain::{product::ProductId, stash_item::StashItem};
 use crate::repositories::StashItemRepository as StashItemRepositoryTrait;
-
-use chrono::NaiveDate;
-use rusqlite::{named_params, Connection, OptionalExtension};
 
 /// A repository for [`StashItem`]s.
 pub struct StashItemRepository {

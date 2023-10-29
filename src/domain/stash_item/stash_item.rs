@@ -1,6 +1,6 @@
 use chrono::NaiveDate;
 
-use crate::domain::product::ProductId;
+use crate::domain::{entity::Entity, product::ProductId};
 
 use super::StashItemId;
 
@@ -35,11 +35,6 @@ impl StashItem {
         }
     }
 
-    /// The ID of this stash item
-    pub fn id(&self) -> &StashItemId {
-        &self.id
-    }
-
     /// The product ID of this stash item
     pub fn product_id(&self) -> &ProductId {
         &self.product_id
@@ -53,6 +48,12 @@ impl StashItem {
     /// The date when this stash item expires
     pub fn expiry_date(&self) -> &NaiveDate {
         &self.expiry_date
+    }
+}
+
+impl Entity<StashItemId> for StashItem {
+    fn id(&self) -> &StashItemId {
+        &self.id
     }
 }
 
