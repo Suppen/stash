@@ -1,15 +1,22 @@
 use crate::domain::value_object::ValueObject;
 
+/// ID of a stash item
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct StashItemId(String);
 
+/// Possible errors when creating a stash item ID
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum StashItemIdError {
+    /// The ID cannot be empty
+    Empty,
+}
+
 impl ValueObject<String> for StashItemId {
-    fn new(value: String) -> Result<StashItemId, Box<dyn std::error::Error>> {
+    type Error = StashItemIdError;
+
+    fn new(value: String) -> Result<StashItemId, Self::Error> {
         if value.len() == 0 {
-            Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::InvalidInput,
-                "Stash item ID cannot be empty",
-            )))
+            Err(StashItemIdError::Empty)
         } else {
             Ok(StashItemId(value))
         }

@@ -1,15 +1,22 @@
 use crate::domain::value_object::ValueObject;
 
+/// ID of a product
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ProductId(String);
 
+/// Possible errors when creating a product ID
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum ProductIdError {
+    /// The ID cannot be empty
+    Empty,
+}
+
 impl ValueObject<String> for ProductId {
-    fn new(value: String) -> Result<Self, Box<dyn std::error::Error>> {
+    type Error = ProductIdError;
+
+    fn new(value: String) -> Result<Self, Self::Error> {
         if value.len() == 0 {
-            Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::InvalidInput,
-                "ProductId cannot be empty",
-            )))
+            Err(ProductIdError::Empty)
         } else {
             Ok(ProductId(value))
         }

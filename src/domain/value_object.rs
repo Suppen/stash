@@ -1,6 +1,9 @@
 pub trait ValueObject<T> {
+    /// The error type that is returned when the value object cannot be created
+    type Error;
+
     /// Creates a new value object with the given value
-    fn new(value: T) -> Result<Self, Box<dyn std::error::Error>>
+    fn new(value: T) -> Result<Self, Self::Error>
     where
         Self: Sized;
 

@@ -4,13 +4,19 @@ use crate::domain::value_object::ValueObject;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Brand(String);
 
+/// Possible errors when creating a brand
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum BrandError {
+    /// The brand cannot be empty
+    Empty,
+}
+
 impl ValueObject<String> for Brand {
-    fn new(value: String) -> Result<Self, Box<dyn std::error::Error>> {
+    type Error = BrandError;
+
+    fn new(value: String) -> Result<Self, Self::Error> {
         if value.is_empty() {
-            Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::InvalidInput,
-                "Brand cannot be empty",
-            )))
+            Err(BrandError::Empty)
         } else {
             Ok(Self(value))
         }
