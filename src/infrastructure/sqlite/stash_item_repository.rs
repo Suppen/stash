@@ -1,10 +1,9 @@
 use chrono::NaiveDate;
-use rusqlite::{named_params, Connection, OptionalExtension};
+use rusqlite::{named_params, Connection};
 use std::sync::{Arc, Mutex};
+use uuid::Uuid;
 
 use crate::domain::entity::Entity;
-use crate::domain::stash_item::StashItemId;
-use crate::domain::value_object::ValueObject;
 use crate::domain::{product::ProductId, stash_item::StashItem};
 use crate::repositories::StashItemRepository as StashItemRepositoryTrait;
 
@@ -40,7 +39,7 @@ impl StashItemRepository {
         let expiry_date = row.get::<_, NaiveDate>("expiry_date")?;
 
         Ok(StashItem::new(
-            StashItemId::new(id)?,
+            Uuid::parse_str(&id)?,
             ProductId::new(product_id)?,
             quantity,
             expiry_date,
@@ -51,12 +50,12 @@ impl StashItemRepository {
 impl StashItemRepositoryTrait for StashItemRepository {
     type Error = StashItemRepositoryError;
 
-    fn find_by_id(&self, id: &StashItemId) -> Result<Option<StashItem>, Self::Error> {
+    fn find_by_id(&self, id: &Uuid) -> Result<Option<StashItem>, Self::Error> {
         let conn = self.conn();
         let mut stmt = conn.prepare(
             "SELECT id, product_id, quantity, expiry_date FROM stash_items WHERE id = :id LIMIT 1",
         )?;
-        let mut rows = stmt.query(named_params! { ":id": id.value() })?;
+        let mut rows = stmt.query(named_params! { ":id": id.to_string() })?;
 
         let row = rows.next()?;
 
@@ -72,7 +71,7 @@ impl StashItemRepositoryTrait for StashItemRepository {
             "INSERT INTO stash_items (id, product_id, quantity, expiry_date) VALUES (:id, :product_id, :quantity, :expiry_date)
             ON CONFLICT(id) DO UPDATE SET product_id = :product_id, quantity = :quantity, expiry_date = :expiry_date",
             named_params! {
-                ":id": stash_item.id().value(),
+                ":id": stash_item.id().to_string(),
                 ":product_id": stash_item.product_id().value(),
                 ":quantity": stash_item.quantity(),
                 ":expiry_date": stash_item.expiry_date(),
@@ -82,10 +81,10 @@ impl StashItemRepositoryTrait for StashItemRepository {
         Ok(())
     }
 
-    fn delete(&self, id: &StashItemId) -> Result<(), Self::Error> {
+    fn delete(&self, id: &Uuid) -> Result<(), Self::Error> {
         self.conn().execute(
             "DELETE FROM stash_items WHERE id = :id",
-            named_params! { ":id": id.value() },
+            named_params! { ":id": id.to_string() },
         )?;
 
         Ok(())
@@ -95,7 +94,7 @@ impl StashItemRepositoryTrait for StashItemRepository {
 #[cfg(test)]
 mod tests {
     use crate::{
-        domain::{brand::Brand, product::Product, value_object::ValueObject},
+        domain::{brand::Brand, product::Product},
         infrastructure::sqlite::{setup_db, ProductRepository},
         repositories::ProductRepository as ProductRepositoryTrait,
     };
@@ -132,7 +131,7 @@ mod tests {
         let repo = get_repo();
 
         let stash_item = StashItem::new(
-            StashItemId::new(String::from("ID")).unwrap(),
+            Uuid::new_v4(),
             ProductId::new(String::from("ID")).unwrap(),
             1,
             NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
@@ -149,7 +148,7 @@ mod tests {
     fn test_find_by_id_not_found() {
         let repo = get_repo();
 
-        let stash_item_id = StashItemId::new(String::from("ID")).unwrap();
+        let stash_item_id = Uuid::new_v4();
 
         let found_stash_item = repo.find_by_id(&stash_item_id).unwrap();
 
@@ -161,7 +160,7 @@ mod tests {
         let repo = get_repo();
 
         let stash_item = StashItem::new(
-            StashItemId::new(String::from("ID")).unwrap(),
+            Uuid::new_v4(),
             ProductId::new(String::from("ID")).unwrap(),
             1,
             NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
@@ -179,7 +178,7 @@ mod tests {
         let repo = get_repo();
 
         let stash_item = StashItem::new(
-            StashItemId::new(String::from("ID")).unwrap(),
+            Uuid::new_v4(),
             ProductId::new(String::from("ID")).unwrap(),
             1,
             NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
@@ -206,7 +205,7 @@ mod tests {
         let repo = get_repo();
 
         let stash_item = StashItem::new(
-            StashItemId::new(String::from("ID")).unwrap(),
+            Uuid::new_v4(),
             ProductId::new(String::from("BAD_ID")).unwrap(),
             1,
             NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
@@ -222,7 +221,7 @@ mod tests {
         let repo = get_repo();
 
         let stash_item = StashItem::new(
-            StashItemId::new(String::from("ID")).unwrap(),
+            Uuid::new_v4(),
             ProductId::new(String::from("ID")).unwrap(),
             1,
             NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
@@ -241,7 +240,7 @@ mod tests {
     fn test_delete_not_found() {
         let repo = get_repo();
 
-        let stash_item_id = StashItemId::new(String::from("ID")).unwrap();
+        let stash_item_id = Uuid::new_v4();
 
         let result = repo.delete(&stash_item_id);
 

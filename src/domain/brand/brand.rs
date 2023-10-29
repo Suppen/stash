@@ -1,5 +1,3 @@
-use crate::domain::value_object::ValueObject;
-
 /// Brand of a product
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Brand(String);
@@ -11,10 +9,8 @@ pub enum BrandError {
     Empty,
 }
 
-impl ValueObject<String> for Brand {
-    type Error = BrandError;
-
-    fn new(value: String) -> Result<Self, Self::Error> {
+impl Brand {
+    pub fn new(value: String) -> Result<Self, BrandError> {
         if value.is_empty() {
             Err(BrandError::Empty)
         } else {
@@ -22,7 +18,7 @@ impl ValueObject<String> for Brand {
         }
     }
 
-    fn value(&self) -> &String {
+    pub fn value(&self) -> &String {
         &self.0
     }
 }
@@ -41,7 +37,7 @@ mod tests {
     fn test_new() {
         let brand = Brand::new(String::from("Brand")).unwrap();
 
-        assert_eq!(brand.value(), "Brand");
+        assert_eq!(brand.to_string(), "Brand");
     }
 
     #[test]
@@ -52,9 +48,17 @@ mod tests {
     }
 
     #[test]
-    fn test_as_str() {
+    fn test_value() {
+        let str = String::from("Brand");
+        let brand = Brand::new(str.clone()).unwrap();
+
+        assert_eq!(brand.value(), &str);
+    }
+
+    #[test]
+    fn test_to_string() {
         let brand = Brand::new(String::from("Brand")).unwrap();
 
-        assert_eq!(brand.value(), "Brand");
+        assert_eq!(brand.to_string(), "Brand");
     }
 }

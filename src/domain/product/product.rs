@@ -35,8 +35,6 @@ impl Entity<ProductId> for Product {
 
 #[cfg(test)]
 mod tests {
-    use crate::domain::value_object::ValueObject;
-
     use super::*;
 
     #[test]

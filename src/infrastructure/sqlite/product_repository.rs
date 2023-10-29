@@ -3,7 +3,6 @@ use std::sync::{Arc, Mutex};
 use crate::domain::brand::Brand;
 use crate::domain::entity::Entity;
 use crate::domain::product::{Product, ProductId};
-use crate::domain::value_object::ValueObject;
 use crate::repositories::ProductRepository as ProductRepositoryTrait;
 use rusqlite::{named_params, Connection};
 

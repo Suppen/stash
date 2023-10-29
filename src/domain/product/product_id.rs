@@ -1,5 +1,3 @@
-use crate::domain::value_object::ValueObject;
-
 /// ID of a product
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ProductId(String);
@@ -11,10 +9,8 @@ pub enum ProductIdError {
     Empty,
 }
 
-impl ValueObject<String> for ProductId {
-    type Error = ProductIdError;
-
-    fn new(value: String) -> Result<Self, Self::Error> {
+impl ProductId {
+    pub fn new(value: String) -> Result<Self, ProductIdError> {
         if value.len() == 0 {
             Err(ProductIdError::Empty)
         } else {
@@ -22,7 +18,7 @@ impl ValueObject<String> for ProductId {
         }
     }
 
-    fn value(&self) -> &String {
+    pub fn value(&self) -> &String {
         &self.0
     }
 }

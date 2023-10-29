@@ -1,14 +1,13 @@
 use chrono::NaiveDate;
+use uuid::Uuid;
 
 use crate::domain::{entity::Entity, product::ProductId};
-
-use super::StashItemId;
 
 /// A stash item is an instance of a product in the stash
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct StashItem {
     /// ID of the stash item
-    id: StashItemId,
+    id: Uuid,
 
     /// ID of the product this is an instance of
     product_id: ProductId,
@@ -21,12 +20,7 @@ pub struct StashItem {
 }
 
 impl StashItem {
-    pub fn new(
-        id: StashItemId,
-        product_id: ProductId,
-        quantity: i64,
-        expiry_date: NaiveDate,
-    ) -> Self {
+    pub fn new(id: Uuid, product_id: ProductId, quantity: i64, expiry_date: NaiveDate) -> Self {
         Self {
             id,
             product_id,
@@ -51,25 +45,37 @@ impl StashItem {
     }
 }
 
-impl Entity<StashItemId> for StashItem {
-    fn id(&self) -> &StashItemId {
+impl Entity<Uuid> for StashItem {
+    fn id(&self) -> &Uuid {
         &self.id
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::domain::value_object::ValueObject;
-
     use super::*;
     use chrono::NaiveDate;
+
+    #[test]
+    fn test_id() {
+        let id = Uuid::new_v4();
+
+        let item = StashItem::new(
+            id.clone(),
+            ProductId::new(String::from("ID")).unwrap(),
+            1,
+            NaiveDate::from_ymd_opt(2023, 10, 28).unwrap(),
+        );
+
+        assert_eq!(item.id(), &id);
+    }
 
     #[test]
     fn test_product_id() {
         let product_id = ProductId::new(String::from("ID")).unwrap();
 
         let item = StashItem::new(
-            StashItemId::new(String::from("ID")).unwrap(),
+            Uuid::new_v4(),
             product_id.clone(),
             1,
             NaiveDate::from_ymd_opt(2023, 10, 28).unwrap(),
@@ -83,7 +89,7 @@ mod tests {
         let quantity = 5;
 
         let item = StashItem::new(
-            StashItemId::new(String::from("ID")).unwrap(),
+            Uuid::new_v4(),
             ProductId::new(String::from("ID")).unwrap(),
             quantity,
             NaiveDate::from_ymd_opt(2023, 10, 28).unwrap(),
@@ -97,7 +103,7 @@ mod tests {
         let expires = NaiveDate::from_ymd_opt(2023, 10, 28).unwrap();
 
         let item = StashItem::new(
-            StashItemId::new(String::from("ID")).unwrap(),
+            Uuid::new_v4(),
             ProductId::new(String::from("ID")).unwrap(),
             1,
             expires,
