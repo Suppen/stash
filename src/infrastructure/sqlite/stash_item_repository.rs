@@ -82,7 +82,7 @@ impl StashItemRepositoryTrait for StashItemRepository {
 #[cfg(test)]
 mod tests {
     use crate::{
-        domain::product::Product,
+        domain::{brand::Brand, product::Product},
         infrastructure::sqlite::{setup_db, ProductRepository},
         repositories::ProductRepository as ProductRepositoryTrait,
     };
@@ -108,7 +108,7 @@ mod tests {
         product_repository
             .save(&Product::new(
                 ProductId::new(DUMMY_PRODUCT_ID).unwrap(),
-                "BRAND",
+                Brand::new("BRAND").unwrap(),
                 "NAME",
             ))
             .unwrap();

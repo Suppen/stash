@@ -1,17 +1,19 @@
+use crate::domain::brand::Brand;
+
 use super::ProductId;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Product {
     id: ProductId,
-    brand: String,
+    brand: Brand,
     name: String,
 }
 
 impl Product {
-    pub fn new(id: ProductId, brand: &str, name: &str) -> Self {
+    pub fn new(id: ProductId, brand: Brand, name: &str) -> Self {
         Self {
             id,
-            brand: brand.to_string(),
+            brand,
             name: name.to_string(),
         }
     }
@@ -20,7 +22,7 @@ impl Product {
         &self.id
     }
 
-    pub fn brand(&self) -> &str {
+    pub fn brand(&self) -> &Brand {
         &self.brand
     }
 
@@ -36,30 +38,31 @@ mod tests {
     #[test]
     fn test_product_id() {
         let product_id = ProductId::new("ID").unwrap();
-        let brand = "Brand";
 
-        let product = Product::new(product_id.clone(), brand, "Name");
+        let product = Product::new(product_id.clone(), Brand::new("Brand").unwrap(), "Name");
 
         assert_eq!(product.id(), &product_id);
     }
 
     #[test]
     fn test_brand() {
-        let product_id = ProductId::new("ID").unwrap();
-        let brand = "Brand";
+        let brand = Brand::new("Brand").unwrap();
 
-        let product = Product::new(product_id, brand, "Name");
+        let product = Product::new(ProductId::new("ID").unwrap(), brand.clone(), "Name");
 
-        assert_eq!(&product.brand(), &brand);
+        assert_eq!(product.brand(), &brand);
     }
 
     #[test]
     fn test_name() {
-        let product_id = ProductId::new("ID").unwrap();
-        let brand = "Brand";
+        let name = "Name";
 
-        let product = Product::new(product_id, brand, "Name");
+        let product = Product::new(
+            ProductId::new("ID").unwrap(),
+            Brand::new("Brand").unwrap(),
+            name,
+        );
 
-        assert_eq!(product.name(), "Name");
+        assert_eq!(product.name(), name);
     }
 }
