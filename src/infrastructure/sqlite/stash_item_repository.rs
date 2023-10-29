@@ -63,7 +63,7 @@ impl StashItemRepositoryTrait for StashItemRepository {
                 ":id": stash_item.id().value(),
                 ":product_id": stash_item.product_id().value(),
                 ":quantity": stash_item.quantity(),
-                ":expiry_date": stash_item.expiry_date().to_string(),
+                ":expiry_date": stash_item.expiry_date(),
             },
         )?;
 
