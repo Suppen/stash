@@ -68,6 +68,15 @@ impl StashItemRepositoryTrait for StashItemRepository {
 
         Ok(())
     }
+
+    fn delete(&self, id: &StashItemId) -> Result<(), Self::Error> {
+        self.conn().execute(
+            "DELETE FROM stash_items WHERE id = :id",
+            named_params! { ":id": id.as_str() },
+        )?;
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -195,5 +204,36 @@ mod tests {
         let result = repo.save(stash_item);
 
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_delete() {
+        let repo = get_repo();
+
+        let stash_item = StashItem::new(
+            StashItemId::new("ID").unwrap(),
+            ProductId::new(DUMMY_PRODUCT_ID).unwrap(),
+            1,
+            NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
+        );
+
+        repo.save(stash_item.clone()).unwrap();
+
+        repo.delete(stash_item.id()).unwrap();
+
+        let found_stash_item = repo.find_by_id(stash_item.id()).unwrap();
+
+        assert!(found_stash_item.is_none());
+    }
+
+    #[test]
+    fn test_delete_not_found() {
+        let repo = get_repo();
+
+        let stash_item_id = StashItemId::new("ID").unwrap();
+
+        let result = repo.delete(&stash_item_id);
+
+        assert!(result.is_ok());
     }
 }
