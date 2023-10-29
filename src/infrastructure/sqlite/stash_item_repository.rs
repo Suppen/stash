@@ -8,6 +8,8 @@ use crate::domain::value_object::ValueObject;
 use crate::domain::{product::ProductId, stash_item::StashItem};
 use crate::repositories::StashItemRepository as StashItemRepositoryTrait;
 
+use super::StashItemRepositoryError;
+
 /// A repository for [`StashItem`]s.
 pub struct StashItemRepository {
     /// The connection to the database. This is wrapped in an [`Arc`] and a [`Mutex`] to allow multiple repos to use the
@@ -32,27 +34,32 @@ impl StashItemRepository {
 }
 
 impl StashItemRepositoryTrait for StashItemRepository {
-    type Error = rusqlite::Error;
+    type Error = StashItemRepositoryError;
 
     fn find_by_id(&self, id: &StashItemId) -> Result<Option<StashItem>, Self::Error> {
-        self.conn()
-            .prepare(
-                "SELECT id, product_id, quantity, expiry_date FROM stash_items WHERE id = :id",
-            )?
-            .query_row(named_params! { ":id": id.value() }, |row| {
-                let id = row.get::<_, String>("id")?;
-                let product_id = row.get::<_, String>("product_id")?;
-                let quantity = row.get::<_, i64>("quantity")?;
-                let expiry_date = row.get::<_, NaiveDate>("expiry_date")?;
+        let conn = self.conn();
+        let mut stmt = conn.prepare(
+            "SELECT id, product_id, quantity, expiry_date FROM stash_items WHERE id = :id LIMIT 1",
+        )?;
+        let mut rows = stmt.query(named_params! { ":id": id.value() })?;
 
-                Ok(StashItem::new(
-                    StashItemId::new(id).expect("Invalid stash item id"),
-                    ProductId::new(product_id).expect("Invalid product id"),
-                    quantity,
-                    expiry_date,
-                ))
-            })
-            .optional()
+        let row = rows.next()?;
+
+        if let Some(row) = row {
+            let id = row.get::<_, String>("id")?;
+            let product_id = row.get::<_, String>("product_id")?;
+            let quantity = row.get::<_, i64>("quantity")?;
+            let expiry_date = row.get::<_, NaiveDate>("expiry_date")?;
+
+            Ok(Some(StashItem::new(
+                StashItemId::new(id)?,
+                ProductId::new(product_id)?,
+                quantity,
+                expiry_date,
+            )))
+        } else {
+            Ok(None)
+        }
     }
 
     fn save(&self, stash_item: StashItem) -> Result<(), Self::Error> {

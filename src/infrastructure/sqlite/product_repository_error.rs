@@ -1,6 +1,6 @@
 use crate::domain::{brand::BrandError, product::ProductIdError};
 
-/// The error type that is returned by the repository
+/// The error type that is returned by the product repository
 #[derive(Debug)]
 pub enum ProductRepositoryError {
     /// The product id is invalid
