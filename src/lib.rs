@@ -8,7 +8,7 @@ mod repositories;
 
 pub fn do_stuff() -> Result<(), String> {
     let connection = Connection::open_in_memory().unwrap();
-    infrastructure::sqlite::setup_db(&connection).unwrap();
+    infrastructure::sqlite::db::setup_db(&connection).unwrap();
 
     let shared_connection = Arc::new(Mutex::new(connection));
 

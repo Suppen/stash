@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex};
 
+use crate::domain::brand::Brand;
 use crate::domain::product::{Product, ProductId};
 use crate::repositories::ProductRepository as ProductRepositoryTrait;
 use rusqlite::{named_params, Connection};
@@ -35,11 +36,11 @@ impl ProductRepository {
     /// This function will return an error if the row contains invalid data, or if the data cannot be parsed into a
     /// [`Product`]
     fn row_to_product(row: &rusqlite::Row) -> Result<Product, ProductRepositoryError> {
-        let id = row.get::<_, String>("id")?;
-        let brand = row.get::<_, String>("brand")?;
+        let id = row.get::<_, ProductId>("id")?;
+        let brand = row.get::<_, Brand>("brand")?;
         let name = row.get::<_, String>("name")?;
 
-        Ok(Product::new(id.parse()?, brand.parse()?, &name))
+        Ok(Product::new(id, brand, &name))
     }
 }
 
@@ -65,8 +66,8 @@ impl ProductRepositoryTrait for ProductRepository {
         self.conn().execute(
             "INSERT INTO products (id, brand, name) VALUES (:id, :brand, :name) ON CONFLICT(id) DO UPDATE SET brand = :brand, name = :name",
             named_params! {
-                ":id": product.id().value(),
-                ":brand": product.brand().value(),
+                ":id": product.id(),
+                ":brand": product.brand(),
                 ":name": product.name(),
             },
         )?;
@@ -78,7 +79,7 @@ impl ProductRepositoryTrait for ProductRepository {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{domain::product::ProductId, infrastructure::sqlite::setup_db};
+    use crate::{domain::product::ProductId, infrastructure::sqlite::db::setup_db};
 
     fn get_repo() -> ProductRepository {
         let connection = Connection::open_in_memory().unwrap();
