@@ -1,11 +1,21 @@
+use getset::{Getters, Setters};
+
 use crate::domain::{brand::Brand, entity::Entity};
 
 use super::ProductId;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Getters, Setters)]
 pub struct Product {
+    /// ID of the product
+    #[getset(skip)]
     id: ProductId,
+
+    /// Brand of the product
+    #[getset(get = "pub", set = "pub")]
     brand: Brand,
+
+    /// Name of the product
+    #[getset(get = "pub", set = "pub")]
     name: String,
 }
 
@@ -16,14 +26,6 @@ impl Product {
             brand,
             name: name.to_string(),
         }
-    }
-
-    pub fn brand(&self) -> &Brand {
-        &self.brand
-    }
-
-    pub fn name(&self) -> &str {
-        &self.name
     }
 }
 

@@ -1,21 +1,26 @@
 use chrono::NaiveDate;
+use getset::{Getters, Setters};
 use uuid::Uuid;
 
 use crate::domain::{entity::Entity, product::ProductId, quantity::Quantity};
 
 /// A stash item is an instance of a product in the stash
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Getters, Setters)]
 pub struct StashItem {
     /// ID of the stash item
+    #[getset(skip)]
     id: Uuid,
 
     /// ID of the product this is an instance of
+    #[getset(get = "pub", set = "pub")]
     product_id: ProductId,
 
     /// Quantity of the product in this stash item
+    #[getset(get = "pub", set = "pub")]
     quantity: Quantity,
 
     /// Date when this stash item expires
+    #[getset(get = "pub", set = "pub")]
     expiry_date: NaiveDate,
 }
 
@@ -32,21 +37,6 @@ impl StashItem {
             quantity,
             expiry_date,
         }
-    }
-
-    /// The product ID of this stash item
-    pub fn product_id(&self) -> &ProductId {
-        &self.product_id
-    }
-
-    /// How many of this item is in the stash
-    pub fn quantity(&self) -> &Quantity {
-        &self.quantity
-    }
-
-    /// The date when this stash item expires
-    pub fn expiry_date(&self) -> &NaiveDate {
-        &self.expiry_date
     }
 }
 
