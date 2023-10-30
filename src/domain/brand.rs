@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 /// Brand of a product
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Brand(String);
@@ -29,36 +31,53 @@ impl std::fmt::Display for Brand {
     }
 }
 
+impl FromStr for Brand {
+    type Err = BrandError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::new(s.to_string())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_new() {
-        let brand = Brand::new(String::from("Brand")).unwrap();
+        let brand: Brand = "Brand".parse().unwrap();
 
         assert_eq!(brand.to_string(), "Brand");
     }
 
     #[test]
     fn test_new_empty() {
-        let brand = Brand::new(String::from(""));
+        let brand = "".parse::<Brand>();
 
         assert!(brand.is_err());
     }
 
     #[test]
     fn test_value() {
-        let str = String::from("Brand");
-        let brand = Brand::new(str.clone()).unwrap();
+        let str = "Brand";
+        let brand: Brand = str.parse().unwrap();
 
         assert_eq!(brand.value(), &str);
     }
 
     #[test]
     fn test_to_string() {
-        let brand = Brand::new(String::from("Brand")).unwrap();
+        let str = "Brand";
+        let brand: Brand = str.parse().unwrap();
 
-        assert_eq!(brand.to_string(), "Brand");
+        assert_eq!(brand.to_string(), str);
+    }
+
+    #[test]
+    fn test_from_str() {
+        let str = "Brand";
+        let brand: Brand = str.parse().unwrap();
+
+        assert_eq!(brand.to_string(), str);
     }
 }

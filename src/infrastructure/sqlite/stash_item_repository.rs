@@ -119,7 +119,7 @@ mod tests {
         product_repository
             .save(&Product::new(
                 ProductId::new(String::from("ID")).unwrap(),
-                Brand::new(String::from("BRAND")).unwrap(),
+                "BRAND".parse().unwrap(),
                 "NAME",
             ))
             .unwrap();

@@ -43,18 +43,14 @@ mod tests {
     fn test_product_id() {
         let product_id = ProductId::new(String::from("ID")).unwrap();
 
-        let product = Product::new(
-            product_id.clone(),
-            Brand::new(String::from("Brand")).unwrap(),
-            "Name",
-        );
+        let product = Product::new(product_id.clone(), "Brand".parse().unwrap(), "Name");
 
         assert_eq!(product.id(), &product_id);
     }
 
     #[test]
     fn test_brand() {
-        let brand = Brand::new(String::from("Brand")).unwrap();
+        let brand: Brand = "Brand".parse().unwrap();
 
         let product = Product::new(
             ProductId::new(String::from("ID")).unwrap(),
@@ -71,7 +67,7 @@ mod tests {
 
         let product = Product::new(
             ProductId::new(String::from("ID")).unwrap(),
-            Brand::new(String::from("Brand")).unwrap(),
+            "Brand".parse().unwrap(),
             name,
         );
 

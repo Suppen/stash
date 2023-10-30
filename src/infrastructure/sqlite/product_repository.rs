@@ -1,7 +1,6 @@
 use std::sync::{Arc, Mutex};
 
 use crate::domain::brand::Brand;
-use crate::domain::entity::Entity;
 use crate::domain::product::{Product, ProductId};
 use crate::repositories::ProductRepository as ProductRepositoryTrait;
 use rusqlite::{named_params, Connection};
@@ -41,7 +40,7 @@ impl ProductRepository {
         let brand = row.get::<_, String>("brand")?;
         let name = row.get::<_, String>("name")?;
 
-        Ok(Product::new(ProductId::new(id)?, Brand::new(brand)?, &name))
+        Ok(Product::new(ProductId::new(id)?, brand.parse()?, &name))
     }
 }
 
@@ -94,11 +93,7 @@ mod tests {
         let repo = get_repo();
 
         let product_id = ProductId::new(String::from("ID")).unwrap();
-        let product = Product::new(
-            product_id.clone(),
-            Brand::new(String::from("BRAND")).unwrap(),
-            "NAME",
-        );
+        let product = Product::new(product_id.clone(), "BRAND".parse().unwrap(), "NAME");
 
         repo.save(&product).unwrap();
 
@@ -123,11 +118,7 @@ mod tests {
         let repo = get_repo();
 
         let product_id = ProductId::new(String::from("ID")).unwrap();
-        let product = Product::new(
-            product_id.clone(),
-            Brand::new(String::from("BRAND")).unwrap(),
-            "NAME",
-        );
+        let product = Product::new(product_id.clone(), "BRAND".parse().unwrap(), "NAME");
 
         repo.save(&product).unwrap();
 
@@ -141,19 +132,11 @@ mod tests {
         let repo = get_repo();
 
         let product_id = ProductId::new(String::from("ID")).unwrap();
-        let product = Product::new(
-            product_id.clone(),
-            Brand::new(String::from("BRAND")).unwrap(),
-            "NAME",
-        );
+        let product = Product::new(product_id.clone(), "BRAND".parse().unwrap(), "NAME");
 
         repo.save(&product).unwrap();
 
-        let updated_product = Product::new(
-            product_id.clone(),
-            Brand::new(String::from("BRAND2")).unwrap(),
-            "NAME2",
-        );
+        let updated_product = Product::new(product_id.clone(), "BRAND".parse().unwrap(), "NAME2");
 
         repo.save(&updated_product).unwrap();
 
