@@ -25,6 +25,14 @@ impl ProductId {
     }
 }
 
+impl std::ops::Deref for ProductId {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 impl std::fmt::Display for ProductId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.value())
@@ -56,6 +64,16 @@ mod tests {
         let product_id = "".parse::<ProductId>();
 
         assert!(matches!(product_id, Err(ProductIdError::Empty)));
+    }
+
+    #[test]
+    fn test_deref() {
+        let id_str = "ID";
+        let product_id: ProductId = id_str.parse().unwrap();
+
+        let str: &str = &product_id;
+
+        assert_eq!(str, id_str);
     }
 
     #[test]

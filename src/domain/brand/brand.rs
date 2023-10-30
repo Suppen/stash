@@ -20,6 +20,14 @@ impl Brand {
     }
 }
 
+impl std::ops::Deref for Brand {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 impl std::fmt::Display for Brand {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.value())
@@ -50,6 +58,16 @@ mod tests {
         let brand = "".parse::<Brand>();
 
         assert!(matches!(brand, Err(BrandError::EmptyError)));
+    }
+
+    #[test]
+    fn test_deref() {
+        let brand_str = "Brand";
+        let brand: Brand = brand_str.parse().unwrap();
+
+        let str: &str = &brand;
+
+        assert_eq!(str, brand_str);
     }
 
     #[test]
