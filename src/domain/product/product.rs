@@ -7,7 +7,7 @@ use super::ProductId;
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Getters, Setters)]
 pub struct Product {
     /// ID of the product
-    #[getset(skip)]
+    #[getset(get = "pub")]
     id: ProductId,
 
     /// Brand of the product
@@ -31,7 +31,7 @@ impl Product {
 
 impl Entity<ProductId> for Product {
     fn id(&self) -> &ProductId {
-        &self.id
+        &self.id()
     }
 }
 

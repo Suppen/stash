@@ -8,7 +8,7 @@ use crate::domain::{entity::Entity, product::ProductId, quantity::Quantity};
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Getters, Setters)]
 pub struct StashItem {
     /// ID of the stash item
-    #[getset(skip)]
+    #[getset(get = "pub")]
     id: Uuid,
 
     /// ID of the product this is an instance of
@@ -42,7 +42,7 @@ impl StashItem {
 
 impl Entity<Uuid> for StashItem {
     fn id(&self) -> &Uuid {
-        &self.id
+        &self.id()
     }
 }
 
