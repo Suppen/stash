@@ -49,7 +49,7 @@ mod tests {
     fn test_new_empty() {
         let brand = "".parse::<Brand>();
 
-        assert!(brand.is_err());
+        assert!(matches!(brand, Err(BrandError::EmptyError)));
     }
 
     #[test]

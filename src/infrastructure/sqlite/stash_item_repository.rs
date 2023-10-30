@@ -94,7 +94,7 @@ impl StashItemRepositoryTrait for StashItemRepository {
 #[cfg(test)]
 mod tests {
     use crate::{
-        domain::{brand::Brand, product::Product},
+        domain::product::Product,
         infrastructure::sqlite::{setup_db, ProductRepository},
         repositories::ProductRepository as ProductRepositoryTrait,
     };

@@ -55,7 +55,7 @@ mod tests {
     fn test_new_empty() {
         let product_id = "".parse::<ProductId>();
 
-        assert!(product_id.is_err());
+        assert!(matches!(product_id, Err(ProductIdError::Empty)));
     }
 
     #[test]
