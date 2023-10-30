@@ -1,20 +1,15 @@
 use std::str::FromStr;
 
+use super::BrandError;
+
 /// Brand of a product
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Brand(String);
 
-/// Possible errors when creating a brand
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum BrandError {
-    /// The brand cannot be empty
-    Empty,
-}
-
 impl Brand {
     pub fn new(value: String) -> Result<Self, BrandError> {
         if value.is_empty() {
-            Err(BrandError::Empty)
+            Err(BrandError::EmptyError)
         } else {
             Ok(Self(value))
         }
