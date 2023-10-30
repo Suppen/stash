@@ -3,9 +3,8 @@ use rusqlite::{named_params, Connection};
 use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 
-use crate::domain::entity::Entity;
 use crate::domain::quantity::Quantity;
-use crate::domain::{product::ProductId, stash_item::StashItem};
+use crate::domain::stash_item::StashItem;
 use crate::repositories::StashItemRepository as StashItemRepositoryTrait;
 
 use super::StashItemRepositoryError;
@@ -41,7 +40,7 @@ impl StashItemRepository {
 
         Ok(StashItem::new(
             Uuid::parse_str(&id)?,
-            ProductId::new(product_id)?,
+            product_id.parse()?,
             Quantity::new(quantity)?,
             expiry_date,
         ))
@@ -118,7 +117,7 @@ mod tests {
         // Save a dummy product so we don't get foreign key violations in the tests
         product_repository
             .save(&Product::new(
-                ProductId::new(String::from("ID")).unwrap(),
+                "ID".parse().unwrap(),
                 "BRAND".parse().unwrap(),
                 "NAME",
             ))
@@ -133,7 +132,7 @@ mod tests {
 
         let stash_item = StashItem::new(
             Uuid::new_v4(),
-            ProductId::new(String::from("ID")).unwrap(),
+            "ID".parse().unwrap(),
             Quantity::new(1).unwrap(),
             NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
         );
@@ -162,7 +161,7 @@ mod tests {
 
         let stash_item = StashItem::new(
             Uuid::new_v4(),
-            ProductId::new(String::from("ID")).unwrap(),
+            "ID".parse().unwrap(),
             Quantity::new(1).unwrap(),
             NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
         );
@@ -180,7 +179,7 @@ mod tests {
 
         let stash_item = StashItem::new(
             Uuid::new_v4(),
-            ProductId::new(String::from("ID")).unwrap(),
+            "ID".parse().unwrap(),
             Quantity::new(1).unwrap(),
             NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
         );
@@ -189,7 +188,7 @@ mod tests {
 
         let updated_stash_item = StashItem::new(
             stash_item.id().clone(),
-            ProductId::new(String::from("ID")).unwrap(),
+            "ID".parse().unwrap(),
             Quantity::new(2).unwrap(),
             NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
         );
@@ -207,7 +206,7 @@ mod tests {
 
         let stash_item = StashItem::new(
             Uuid::new_v4(),
-            ProductId::new(String::from("BAD_ID")).unwrap(),
+            "BAD ID".parse().unwrap(),
             Quantity::new(1).unwrap(),
             NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
         );
@@ -223,7 +222,7 @@ mod tests {
 
         let stash_item = StashItem::new(
             Uuid::new_v4(),
-            ProductId::new(String::from("ID")).unwrap(),
+            "ID".parse().unwrap(),
             Quantity::new(1).unwrap(),
             NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
         );

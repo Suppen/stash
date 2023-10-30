@@ -57,7 +57,7 @@ mod tests {
 
         let item = StashItem::new(
             id.clone(),
-            ProductId::new(String::from("ID")).unwrap(),
+            "ID".parse().unwrap(),
             Quantity::new(1).unwrap(),
             NaiveDate::from_ymd_opt(2023, 10, 28).unwrap(),
         );
@@ -67,7 +67,7 @@ mod tests {
 
     #[test]
     fn test_product_id() {
-        let product_id = ProductId::new(String::from("ID")).unwrap();
+        let product_id: ProductId = "ID".parse().unwrap();
 
         let item = StashItem::new(
             Uuid::new_v4(),
@@ -85,7 +85,7 @@ mod tests {
 
         let item = StashItem::new(
             Uuid::new_v4(),
-            ProductId::new(String::from("ID")).unwrap(),
+            "ID".parse().unwrap(),
             quantity,
             NaiveDate::from_ymd_opt(2023, 10, 28).unwrap(),
         );
@@ -99,7 +99,7 @@ mod tests {
 
         let item = StashItem::new(
             Uuid::new_v4(),
-            ProductId::new(String::from("ID")).unwrap(),
+            "ID".parse().unwrap(),
             Quantity::new(1).unwrap(),
             expires,
         );

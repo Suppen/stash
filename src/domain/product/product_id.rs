@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 /// ID of a product
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ProductId(String);
@@ -29,28 +31,54 @@ impl std::fmt::Display for ProductId {
     }
 }
 
+impl FromStr for ProductId {
+    type Err = ProductIdError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::new(s.to_string())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_new() {
-        let product_id = ProductId::new(String::from("ID")).unwrap();
+        let str = "ID";
+        let product_id: ProductId = str.parse().unwrap();
 
-        assert_eq!(product_id.value(), "ID");
+        assert_eq!(product_id.value(), str);
     }
 
     #[test]
     fn test_new_empty() {
-        let product_id = ProductId::new(String::from(""));
+        let product_id = "".parse::<ProductId>();
 
         assert!(product_id.is_err());
     }
 
     #[test]
-    fn test_as_str() {
-        let product_id = ProductId::new(String::from("ID")).unwrap();
+    fn test_value() {
+        let str = "ID";
+        let product_id = str.parse::<ProductId>().unwrap();
 
-        assert_eq!(product_id.value(), "ID");
+        assert_eq!(product_id.value(), str);
+    }
+
+    #[test]
+    fn test_to_string() {
+        let str = "ID";
+        let product_id: ProductId = str.parse().unwrap();
+
+        assert_eq!(product_id.to_string(), str);
+    }
+
+    #[test]
+    fn test_from_str() {
+        let str = "ID";
+        let product_id: ProductId = str.parse().unwrap();
+
+        assert_eq!(product_id.value(), str);
     }
 }

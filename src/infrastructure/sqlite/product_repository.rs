@@ -40,7 +40,7 @@ impl ProductRepository {
         let brand = row.get::<_, String>("brand")?;
         let name = row.get::<_, String>("name")?;
 
-        Ok(Product::new(ProductId::new(id)?, brand.parse()?, &name))
+        Ok(Product::new(id.parse()?, brand.parse()?, &name))
     }
 }
 
@@ -92,7 +92,7 @@ mod tests {
     fn test_find_by_id() {
         let repo = get_repo();
 
-        let product_id = ProductId::new(String::from("ID")).unwrap();
+        let product_id: ProductId = "ID".parse().unwrap();
         let product = Product::new(product_id.clone(), "BRAND".parse().unwrap(), "NAME");
 
         repo.save(&product).unwrap();
@@ -106,7 +106,7 @@ mod tests {
     fn test_find_by_id_not_found() {
         let repo = get_repo();
 
-        let product_id = ProductId::new(String::from("ID")).unwrap();
+        let product_id: ProductId = "ID".parse().unwrap();
 
         let found_product = repo.find_by_id(&product_id).unwrap();
 
@@ -117,7 +117,7 @@ mod tests {
     fn test_save() {
         let repo = get_repo();
 
-        let product_id = ProductId::new(String::from("ID")).unwrap();
+        let product_id: ProductId = "ID".parse().unwrap();
         let product = Product::new(product_id.clone(), "BRAND".parse().unwrap(), "NAME");
 
         repo.save(&product).unwrap();
@@ -131,7 +131,7 @@ mod tests {
     fn test_save_update() {
         let repo = get_repo();
 
-        let product_id = ProductId::new(String::from("ID")).unwrap();
+        let product_id: ProductId = "ID".parse().unwrap();
         let product = Product::new(product_id.clone(), "BRAND".parse().unwrap(), "NAME");
 
         repo.save(&product).unwrap();
