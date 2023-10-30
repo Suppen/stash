@@ -1,7 +1,7 @@
 use chrono::NaiveDate;
 use uuid::Uuid;
 
-use crate::domain::{entity::Entity, product::ProductId};
+use crate::domain::{entity::Entity, product::ProductId, quantity::Quantity};
 
 /// A stash item is an instance of a product in the stash
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -13,14 +13,19 @@ pub struct StashItem {
     product_id: ProductId,
 
     /// Quantity of the product in this stash item
-    quantity: i64,
+    quantity: Quantity,
 
     /// Date when this stash item expires
     expiry_date: NaiveDate,
 }
 
 impl StashItem {
-    pub fn new(id: Uuid, product_id: ProductId, quantity: i64, expiry_date: NaiveDate) -> Self {
+    pub fn new(
+        id: Uuid,
+        product_id: ProductId,
+        quantity: Quantity,
+        expiry_date: NaiveDate,
+    ) -> Self {
         Self {
             id,
             product_id,
@@ -35,8 +40,8 @@ impl StashItem {
     }
 
     /// How many of this item is in the stash
-    pub fn quantity(&self) -> i64 {
-        self.quantity
+    pub fn quantity(&self) -> &Quantity {
+        &self.quantity
     }
 
     /// The date when this stash item expires
@@ -63,7 +68,7 @@ mod tests {
         let item = StashItem::new(
             id.clone(),
             ProductId::new(String::from("ID")).unwrap(),
-            1,
+            Quantity::new(1).unwrap(),
             NaiveDate::from_ymd_opt(2023, 10, 28).unwrap(),
         );
 
@@ -77,7 +82,7 @@ mod tests {
         let item = StashItem::new(
             Uuid::new_v4(),
             product_id.clone(),
-            1,
+            Quantity::new(1).unwrap(),
             NaiveDate::from_ymd_opt(2023, 10, 28).unwrap(),
         );
 
@@ -86,7 +91,7 @@ mod tests {
 
     #[test]
     fn test_quantity() {
-        let quantity = 5;
+        let quantity = Quantity::new(5).unwrap();
 
         let item = StashItem::new(
             Uuid::new_v4(),
@@ -95,7 +100,7 @@ mod tests {
             NaiveDate::from_ymd_opt(2023, 10, 28).unwrap(),
         );
 
-        assert_eq!(item.quantity(), quantity);
+        assert_eq!(item.quantity(), &quantity);
     }
 
     #[test]
@@ -105,7 +110,7 @@ mod tests {
         let item = StashItem::new(
             Uuid::new_v4(),
             ProductId::new(String::from("ID")).unwrap(),
-            1,
+            Quantity::new(1).unwrap(),
             expires,
         );
 

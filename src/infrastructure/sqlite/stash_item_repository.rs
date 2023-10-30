@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 
 use crate::domain::entity::Entity;
+use crate::domain::quantity::Quantity;
 use crate::domain::{product::ProductId, stash_item::StashItem};
 use crate::repositories::StashItemRepository as StashItemRepositoryTrait;
 
@@ -41,7 +42,7 @@ impl StashItemRepository {
         Ok(StashItem::new(
             Uuid::parse_str(&id)?,
             ProductId::new(product_id)?,
-            quantity,
+            Quantity::new(quantity)?,
             expiry_date,
         ))
     }
@@ -73,7 +74,7 @@ impl StashItemRepositoryTrait for StashItemRepository {
             named_params! {
                 ":id": stash_item.id().to_string(),
                 ":product_id": stash_item.product_id().value(),
-                ":quantity": stash_item.quantity(),
+                ":quantity": stash_item.quantity().value(),
                 ":expiry_date": stash_item.expiry_date(),
             },
         )?;
@@ -133,7 +134,7 @@ mod tests {
         let stash_item = StashItem::new(
             Uuid::new_v4(),
             ProductId::new(String::from("ID")).unwrap(),
-            1,
+            Quantity::new(1).unwrap(),
             NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
         );
 
@@ -162,7 +163,7 @@ mod tests {
         let stash_item = StashItem::new(
             Uuid::new_v4(),
             ProductId::new(String::from("ID")).unwrap(),
-            1,
+            Quantity::new(1).unwrap(),
             NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
         );
 
@@ -180,7 +181,7 @@ mod tests {
         let stash_item = StashItem::new(
             Uuid::new_v4(),
             ProductId::new(String::from("ID")).unwrap(),
-            1,
+            Quantity::new(1).unwrap(),
             NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
         );
 
@@ -189,7 +190,7 @@ mod tests {
         let updated_stash_item = StashItem::new(
             stash_item.id().clone(),
             ProductId::new(String::from("ID")).unwrap(),
-            2,
+            Quantity::new(2).unwrap(),
             NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
         );
 
@@ -207,7 +208,7 @@ mod tests {
         let stash_item = StashItem::new(
             Uuid::new_v4(),
             ProductId::new(String::from("BAD_ID")).unwrap(),
-            1,
+            Quantity::new(1).unwrap(),
             NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
         );
 
@@ -223,7 +224,7 @@ mod tests {
         let stash_item = StashItem::new(
             Uuid::new_v4(),
             ProductId::new(String::from("ID")).unwrap(),
-            1,
+            Quantity::new(1).unwrap(),
             NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
         );
 
