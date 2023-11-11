@@ -322,6 +322,30 @@ mod tests {
     }
 
     #[test]
+    fn test_save_duplicate_product_id_and_expiry_date() {
+        let repo = get_repo();
+
+        let stash_item_1 = StashItem::new(
+            Uuid::new_v4(),
+            "ID".parse().unwrap(),
+            Quantity::new(1).unwrap(),
+            NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
+        );
+        let stash_item_2 = StashItem::new(
+            Uuid::new_v4(),
+            "ID".parse().unwrap(),
+            Quantity::new(2).unwrap(),
+            NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
+        );
+
+        repo.save(stash_item_1.clone()).unwrap();
+
+        let result = repo.save(stash_item_2);
+
+        assert!(result.is_err());
+    }
+
+    #[test]
     fn test_delete() {
         let repo = get_repo();
 

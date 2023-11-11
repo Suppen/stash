@@ -19,6 +19,7 @@ pub fn setup_db(connection: &rusqlite::Connection) -> Result<(), rusqlite::Error
             quantity INTEGER NOT NULL,
             expiry_date TEXT NOT NULL,
             FOREIGN KEY (product_id) REFERENCES products(id)
+            UNIQUE (product_id, expiry_date)
         )",
         params![],
     )?;
