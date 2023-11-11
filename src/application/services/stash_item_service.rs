@@ -1,5 +1,8 @@
 use std::sync::Arc;
 
+use chrono::NaiveDate;
+use uuid::Uuid;
+
 use crate::{
     application::usecases::{
         GetStashItemById, GetStashItemByProductIdAndExpiryDate, GetStashItemsByProductId,
@@ -23,7 +26,7 @@ impl<E> StashItemService<E> {
 impl<E> GetStashItemById<E> for StashItemService<E> {
     fn get_stash_item_by_id(
         &self,
-        id: &uuid::Uuid,
+        id: &Uuid,
     ) -> Result<Option<crate::domain::stash_item::StashItem>, E> {
         self.stash_item_repository.find_by_id(id)
     }
@@ -43,7 +46,7 @@ impl<E> GetStashItemByProductIdAndExpiryDate<E> for StashItemService<E> {
     fn get_stash_item_by_product_id_and_expiry_date(
         &self,
         product_id: &crate::domain::product::ProductId,
-        expiry_date: &chrono::NaiveDate,
+        expiry_date: &NaiveDate,
     ) -> Result<Option<crate::domain::stash_item::StashItem>, E> {
         self.stash_item_repository
             .find_by_product_id_and_expiry_date(product_id, expiry_date)
@@ -53,7 +56,7 @@ impl<E> GetStashItemByProductIdAndExpiryDate<E> for StashItemService<E> {
 impl<E> GetStashItemsExpiringBefore<E> for StashItemService<E> {
     fn get_stash_items_expiring_before(
         &self,
-        date: &chrono::NaiveDate,
+        date: &NaiveDate,
     ) -> Result<Vec<crate::domain::stash_item::StashItem>, E> {
         self.stash_item_repository.find_all_expiring_before(date)
     }
