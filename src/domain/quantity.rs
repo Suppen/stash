@@ -1,12 +1,14 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Quantity(u64);
 
+/// Errors that can occur when creating a quantity
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum QuantityError {
     /// A quantity can not be zero
     Zero,
 }
 
+/// A quantity of a product
 impl Quantity {
     /// Create a new quantity from a positive integer
     ///

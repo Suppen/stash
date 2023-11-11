@@ -1,7 +1,7 @@
 /// Possible errors when creating a brand
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum BrandError {
-    /// The brand cannot be empty
+    /// The brand name is empty
     EmptyError,
 }
 

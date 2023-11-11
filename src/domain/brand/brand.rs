@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{fmt::Display, ops::Deref, str::FromStr};
 
 use super::BrandError;
 
@@ -6,7 +6,16 @@ use super::BrandError;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Brand(String);
 
+/// The brand of a product
 impl Brand {
+    /// Create a new brand
+    ///
+    /// # Parameters
+    /// * `value` - The value of the brand
+    ///
+    /// # Returns
+    /// `Ok(Self)` if the brand could successfully be created
+    /// `Err(BrandError::EmptyError)` if the value is empty
     pub fn new(value: String) -> Result<Self, BrandError> {
         if value.is_empty() {
             Err(BrandError::EmptyError)
@@ -15,12 +24,16 @@ impl Brand {
         }
     }
 
+    /// Get the value of the brand
+    ///
+    /// # Returns
+    /// The value of the brand
     pub fn value(&self) -> &String {
         &self.0
     }
 }
 
-impl std::ops::Deref for Brand {
+impl Deref for Brand {
     type Target = String;
 
     fn deref(&self) -> &Self::Target {
@@ -28,7 +41,7 @@ impl std::ops::Deref for Brand {
     }
 }
 
-impl std::fmt::Display for Brand {
+impl Display for Brand {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.value())
     }
