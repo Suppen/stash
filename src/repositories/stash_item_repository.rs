@@ -6,6 +6,9 @@ pub trait StashItemRepository<E> {
     /// Returns one stash item by id
     fn find_by_id(&self, id: &Uuid) -> Result<Option<StashItem>, E>;
 
+    /// Returns all stash items with the given product id
+    fn find_all_by_product_id(&self, product_id: &ProductId) -> Result<Vec<StashItem>, E>;
+
     /// Returns one stash item by its unique combo of product id and expiry date
     fn find_by_product_id_and_expiry_date(
         &self,

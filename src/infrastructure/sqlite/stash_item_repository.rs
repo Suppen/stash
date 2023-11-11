@@ -65,6 +65,25 @@ impl StashItemRepositoryTrait<StashItemRepositoryError> for StashItemRepository 
         }
     }
 
+    fn find_all_by_product_id(
+        &self,
+        product_id: &ProductId,
+    ) -> Result<Vec<StashItem>, StashItemRepositoryError> {
+        let conn = self.conn();
+        let mut stmt = conn.prepare(
+            "SELECT id, product_id, quantity, expiry_date FROM stash_items WHERE product_id = :product_id",
+        )?;
+        let mut rows = stmt.query(named_params! { ":product_id": product_id })?;
+
+        let mut stash_items = Vec::new();
+
+        while let Some(row) = rows.next()? {
+            stash_items.push(StashItemRepository::row_to_stash_item(&row)?);
+        }
+
+        Ok(stash_items)
+    }
+
     fn find_by_product_id_and_expiry_date(
         &self,
         product_id: &ProductId,
@@ -178,6 +197,35 @@ mod tests {
     }
 
     #[test]
+    fn test_find_by_product_id() {
+        let repo = get_repo();
+
+        let stash_item_1 = StashItem::new(
+            Uuid::new_v4(),
+            "ID".parse().unwrap(),
+            Quantity::new(1).unwrap(),
+            NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
+        );
+        let stash_item_2 = StashItem::new(
+            Uuid::new_v4(),
+            "ID".parse().unwrap(),
+            Quantity::new(2).unwrap(),
+            NaiveDate::from_ymd_opt(2020, 1, 2).unwrap(),
+        );
+
+        repo.save(stash_item_1.clone()).unwrap();
+        repo.save(stash_item_2.clone()).unwrap();
+
+        let found_stash_items = repo
+            .find_all_by_product_id(stash_item_1.product_id())
+            .unwrap();
+
+        assert_eq!(found_stash_items.len(), 2);
+        assert!(found_stash_items.contains(&stash_item_1));
+        assert!(found_stash_items.contains(&stash_item_2));
+    }
+
+    #[test]
     fn test_find_by_product_id_and_expiry_date() {
         let repo = get_repo();
 
@@ -196,6 +244,20 @@ mod tests {
             .unwrap();
 
         assert_eq!(stash_item, found_stash_item);
+    }
+
+    #[test]
+    fn test_find_by_product_id_and_expiry_date_not_found() {
+        let repo = get_repo();
+
+        let found_stash_item = repo
+            .find_by_product_id_and_expiry_date(
+                &"ID".parse().unwrap(),
+                &NaiveDate::from_ymd_opt(2020, 1, 2).unwrap(),
+            )
+            .unwrap();
+
+        assert!(found_stash_item.is_none());
     }
 
     #[test]
