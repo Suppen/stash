@@ -3,6 +3,7 @@ use rusqlite::{named_params, Connection};
 use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 
+use crate::domain::product::ProductId;
 use crate::domain::quantity::Quantity;
 use crate::domain::stash_item::StashItem;
 use crate::repositories::StashItemRepository as StashItemRepositoryTrait;
@@ -47,10 +48,8 @@ impl StashItemRepository {
     }
 }
 
-impl StashItemRepositoryTrait for StashItemRepository {
-    type Error = StashItemRepositoryError;
-
-    fn find_by_id(&self, id: &Uuid) -> Result<Option<StashItem>, Self::Error> {
+impl StashItemRepositoryTrait<StashItemRepositoryError> for StashItemRepository {
+    fn find_by_id(&self, id: &Uuid) -> Result<Option<StashItem>, StashItemRepositoryError> {
         let conn = self.conn();
         let mut stmt = conn.prepare(
             "SELECT id, product_id, quantity, expiry_date FROM stash_items WHERE id = :id LIMIT 1",
@@ -66,7 +65,30 @@ impl StashItemRepositoryTrait for StashItemRepository {
         }
     }
 
-    fn save(&self, stash_item: StashItem) -> Result<(), Self::Error> {
+    fn find_by_product_id_and_expiry_date(
+        &self,
+        product_id: &ProductId,
+        expiry_date: &chrono::NaiveDate,
+    ) -> Result<Option<StashItem>, StashItemRepositoryError> {
+        let conn = self.conn();
+        let mut stmt = conn.prepare(
+            "SELECT id, product_id, quantity, expiry_date FROM stash_items WHERE product_id = :product_id AND expiry_date = :expiry_date LIMIT 1",
+        )?;
+        let mut rows = stmt.query(named_params! {
+            ":product_id": product_id.to_string(),
+            ":expiry_date": expiry_date,
+        })?;
+
+        let row = rows.next()?;
+
+        if let Some(row) = row {
+            StashItemRepository::row_to_stash_item(&row).map(Some)
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn save(&self, stash_item: StashItem) -> Result<(), StashItemRepositoryError> {
         self.conn().execute(
             "INSERT INTO stash_items (id, product_id, quantity, expiry_date) VALUES (:id, :product_id, :quantity, :expiry_date)
             ON CONFLICT(id) DO UPDATE SET product_id = :product_id, quantity = :quantity, expiry_date = :expiry_date",
@@ -81,7 +103,7 @@ impl StashItemRepositoryTrait for StashItemRepository {
         Ok(())
     }
 
-    fn delete(&self, id: &Uuid) -> Result<(), Self::Error> {
+    fn delete(&self, id: &Uuid) -> Result<(), StashItemRepositoryError> {
         self.conn().execute(
             "DELETE FROM stash_items WHERE id = :id",
             named_params! { ":id": id.to_string() },
@@ -153,6 +175,27 @@ mod tests {
         let found_stash_item = repo.find_by_id(&stash_item_id).unwrap();
 
         assert!(found_stash_item.is_none());
+    }
+
+    #[test]
+    fn test_find_by_product_id_and_expiry_date() {
+        let repo = get_repo();
+
+        let stash_item = StashItem::new(
+            Uuid::new_v4(),
+            "ID".parse().unwrap(),
+            Quantity::new(1).unwrap(),
+            NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
+        );
+
+        repo.save(stash_item.clone()).unwrap();
+
+        let found_stash_item = repo
+            .find_by_product_id_and_expiry_date(stash_item.product_id(), stash_item.expiry_date())
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(stash_item, found_stash_item);
     }
 
     #[test]
