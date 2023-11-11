@@ -6,3 +6,5 @@ pub use stash_item_repository::StashItemRepository;
 
 #[cfg(test)]
 pub use product_repository::MockProductRepository;
+#[cfg(test)]
+pub use stash_item_repository::MockStashItemRepository;

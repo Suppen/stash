@@ -2,6 +2,7 @@ use uuid::Uuid;
 
 use crate::domain::{product::ProductId, stash_item::StashItem};
 
+#[cfg_attr(test, mockall::automock)]
 pub trait StashItemRepository<E> {
     /// Returns one stash item by id
     fn find_by_id(&self, id: &Uuid) -> Result<Option<StashItem>, E>;
