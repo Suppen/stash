@@ -46,6 +46,19 @@ impl StashItemRepository {
             expiry_date,
         ))
     }
+
+    /// Converts raw database rows into [`StashItem`]s
+    fn rows_to_stash_items(
+        rows: &mut rusqlite::Rows,
+    ) -> Result<Vec<StashItem>, StashItemRepositoryError> {
+        let mut stash_items = Vec::new();
+
+        while let Some(row) = rows.next()? {
+            stash_items.push(StashItemRepository::row_to_stash_item(&row)?);
+        }
+
+        Ok(stash_items)
+    }
 }
 
 impl StashItemRepositoryTrait<StashItemRepositoryError> for StashItemRepository {
@@ -75,13 +88,7 @@ impl StashItemRepositoryTrait<StashItemRepositoryError> for StashItemRepository 
         )?;
         let mut rows = stmt.query(named_params! { ":product_id": product_id })?;
 
-        let mut stash_items = Vec::new();
-
-        while let Some(row) = rows.next()? {
-            stash_items.push(StashItemRepository::row_to_stash_item(&row)?);
-        }
-
-        Ok(stash_items)
+        Ok(StashItemRepository::rows_to_stash_items(&mut rows)?)
     }
 
     fn find_by_product_id_and_expiry_date(
@@ -105,6 +112,19 @@ impl StashItemRepositoryTrait<StashItemRepositoryError> for StashItemRepository 
         } else {
             Ok(None)
         }
+    }
+
+    fn find_all_expiring_before(
+        &self,
+        date: &NaiveDate,
+    ) -> Result<Vec<StashItem>, StashItemRepositoryError> {
+        let conn = self.conn();
+        let mut stmt = conn.prepare(
+            "SELECT id, product_id, quantity, expiry_date FROM stash_items WHERE expiry_date < :date",
+        )?;
+        let mut rows = stmt.query(named_params! { ":date": date })?;
+
+        Ok(StashItemRepository::rows_to_stash_items(&mut rows)?)
     }
 
     fn save(&self, stash_item: StashItem) -> Result<(), StashItemRepositoryError> {
@@ -258,6 +278,42 @@ mod tests {
             .unwrap();
 
         assert!(found_stash_item.is_none());
+    }
+
+    #[test]
+    fn test_find_all_expiring_before() {
+        let repo = get_repo();
+
+        let stash_item_1 = StashItem::new(
+            Uuid::new_v4(),
+            "ID".parse().unwrap(),
+            Quantity::new(1).unwrap(),
+            NaiveDate::from_ymd_opt(2019, 12, 31).unwrap(),
+        );
+        let stash_item_2 = StashItem::new(
+            Uuid::new_v4(),
+            "ID".parse().unwrap(),
+            Quantity::new(2).unwrap(),
+            NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
+        );
+        let stash_item_3 = StashItem::new(
+            Uuid::new_v4(),
+            "ID".parse().unwrap(),
+            Quantity::new(3).unwrap(),
+            NaiveDate::from_ymd_opt(2020, 1, 2).unwrap(),
+        );
+
+        repo.save(stash_item_1.clone()).unwrap();
+        repo.save(stash_item_2.clone()).unwrap();
+        repo.save(stash_item_3.clone()).unwrap();
+
+        let found_stash_items = repo
+            .find_all_expiring_before(&NaiveDate::from_ymd_opt(2020, 1, 2).unwrap())
+            .unwrap();
+
+        assert_eq!(found_stash_items.len(), 2);
+        assert!(found_stash_items.contains(&stash_item_1));
+        assert!(found_stash_items.contains(&stash_item_2));
     }
 
     #[test]

@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
 use crate::{
-    application::usecases::{GetStashItemById, GetStashItemByProductIdAndExpiryDate},
+    application::usecases::{
+        GetStashItemById, GetStashItemByProductIdAndExpiryDate, GetStashItemsExpiringBefore,
+    },
     repositories::StashItemRepository,
 };
 
@@ -34,6 +36,15 @@ impl<E> GetStashItemByProductIdAndExpiryDate<E> for StashItemService<E> {
     ) -> Result<Option<crate::domain::stash_item::StashItem>, E> {
         self.stash_item_repository
             .find_by_product_id_and_expiry_date(product_id, expiry_date)
+    }
+}
+
+impl<E> GetStashItemsExpiringBefore<E> for StashItemService<E> {
+    fn get_stash_items_expiring_before(
+        &self,
+        date: &chrono::NaiveDate,
+    ) -> Result<Vec<crate::domain::stash_item::StashItem>, E> {
+        self.stash_item_repository.find_all_expiring_before(date)
     }
 }
 
@@ -129,5 +140,29 @@ mod test {
             .unwrap();
 
         assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_get_stash_items_expiring_before() {
+        let date_1 = NaiveDate::from_ymd_opt(2021, 1, 1).unwrap();
+        let date_2 = NaiveDate::from_ymd_opt(2021, 1, 2).unwrap();
+
+        let mut stash_item_repository = MockStashItemRepository::<TestError>::new();
+        let stash_item = StashItem::new(
+            uuid::Uuid::new_v4(),
+            "ID".parse().unwrap(),
+            Quantity::new(1).unwrap(),
+            date_1.clone(),
+        );
+        let returned_stash_item = stash_item.clone();
+
+        stash_item_repository
+            .expect_find_all_expiring_before()
+            .with(eq(date_2.clone()))
+            .returning(move |_| Ok(vec![returned_stash_item.clone()]));
+        let service = StashItemService::new(Arc::new(stash_item_repository));
+        let result = service.get_stash_items_expiring_before(&date_2).unwrap();
+
+        assert_eq!(result, vec![stash_item]);
     }
 }
