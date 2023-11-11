@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
-use crate::{application::usecases::GetStashItemById, repositories::StashItemRepository};
+use crate::{
+    application::usecases::{GetStashItemById, GetStashItemByProductIdAndExpiryDate},
+    repositories::StashItemRepository,
+};
 
 pub struct StashItemService<E> {
     pub stash_item_repository: Arc<dyn StashItemRepository<E>>,
@@ -23,13 +26,26 @@ impl<E> GetStashItemById<E> for StashItemService<E> {
     }
 }
 
+impl<E> GetStashItemByProductIdAndExpiryDate<E> for StashItemService<E> {
+    fn get_stash_item_by_product_id_and_expiry_date(
+        &self,
+        product_id: &crate::domain::product::ProductId,
+        expiry_date: &chrono::NaiveDate,
+    ) -> Result<Option<crate::domain::stash_item::StashItem>, E> {
+        self.stash_item_repository
+            .find_by_product_id_and_expiry_date(product_id, expiry_date)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
     use crate::domain::quantity::Quantity;
     use crate::domain::stash_item::StashItem;
     use crate::repositories::MockStashItemRepository;
+    use chrono::NaiveDate;
     use mockall::predicate::*;
+    use uuid::Uuid;
 
     #[derive(Debug)]
     struct TestError;
@@ -54,5 +70,64 @@ mod test {
 
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Some(stash_item));
+    }
+
+    #[test]
+    fn test_get_stash_item_by_id_not_found() {
+        let mut stash_item_repository = MockStashItemRepository::<TestError>::new();
+
+        stash_item_repository
+            .expect_find_by_id()
+            .returning(move |_| Ok(None));
+        let service = StashItemService::new(Arc::new(stash_item_repository));
+        let result = service.get_stash_item_by_id(&Uuid::new_v4()).unwrap();
+
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_get_stash_item_by_product_id_and_expiry_date() {
+        let mut stash_item_repository = MockStashItemRepository::<TestError>::new();
+        let stash_item = StashItem::new(
+            uuid::Uuid::new_v4(),
+            "ID".parse().unwrap(),
+            Quantity::new(1).unwrap(),
+            chrono::NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
+        );
+        let returned_stash_item = stash_item.clone();
+
+        stash_item_repository
+            .expect_find_by_product_id_and_expiry_date()
+            .with(
+                eq(stash_item.product_id().clone()),
+                eq(stash_item.expiry_date().clone()),
+            )
+            .returning(move |_, _| Ok(Some(returned_stash_item.clone())));
+        let service = StashItemService::new(Arc::new(stash_item_repository));
+        let result = service.get_stash_item_by_product_id_and_expiry_date(
+            stash_item.product_id(),
+            stash_item.expiry_date(),
+        );
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Some(stash_item));
+    }
+
+    #[test]
+    fn test_get_stash_item_by_product_id_and_expiry_date_not_found() {
+        let mut stash_item_repository = MockStashItemRepository::<TestError>::new();
+
+        stash_item_repository
+            .expect_find_by_product_id_and_expiry_date()
+            .returning(move |_, _| Ok(None));
+        let service = StashItemService::new(Arc::new(stash_item_repository));
+        let result = service
+            .get_stash_item_by_product_id_and_expiry_date(
+                &"ID".parse().unwrap(),
+                &NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
+            )
+            .unwrap();
+
+        assert_eq!(result, None);
     }
 }
