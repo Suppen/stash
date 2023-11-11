@@ -44,10 +44,8 @@ impl ProductRepository {
     }
 }
 
-impl ProductRepositoryTrait for ProductRepository {
-    type Error = ProductRepositoryError;
-
-    fn find_by_id(&self, id: &ProductId) -> Result<Option<Product>, Self::Error> {
+impl ProductRepositoryTrait<ProductRepositoryError> for ProductRepository {
+    fn find_by_id(&self, id: &ProductId) -> Result<Option<Product>, ProductRepositoryError> {
         let conn = self.conn();
         let mut stmt =
             conn.prepare("SELECT id, brand, name FROM products WHERE id = :id LIMIT 1")?;
@@ -62,7 +60,7 @@ impl ProductRepositoryTrait for ProductRepository {
         }
     }
 
-    fn save(&self, product: &Product) -> Result<(), Self::Error> {
+    fn save(&self, product: Product) -> Result<(), ProductRepositoryError> {
         self.conn().execute(
             "INSERT INTO products (id, brand, name) VALUES (:id, :brand, :name) ON CONFLICT(id) DO UPDATE SET brand = :brand, name = :name",
             named_params! {
@@ -70,6 +68,15 @@ impl ProductRepositoryTrait for ProductRepository {
                 ":brand": product.brand(),
                 ":name": product.name(),
             },
+        )?;
+
+        Ok(())
+    }
+
+    fn delete_by_id(&self, id: &ProductId) -> Result<(), ProductRepositoryError> {
+        self.conn().execute(
+            "DELETE FROM products WHERE id = :id",
+            named_params! { ":id": id.value() },
         )?;
 
         Ok(())
@@ -95,7 +102,7 @@ mod tests {
         let product_id: ProductId = "ID".parse().unwrap();
         let product = Product::new(product_id.clone(), "BRAND".parse().unwrap(), "NAME");
 
-        repo.save(&product).unwrap();
+        repo.save(product.clone()).unwrap();
 
         let found_product = repo.find_by_id(&product_id).unwrap().unwrap();
 
@@ -120,7 +127,7 @@ mod tests {
         let product_id: ProductId = "ID".parse().unwrap();
         let product = Product::new(product_id.clone(), "BRAND".parse().unwrap(), "NAME");
 
-        repo.save(&product).unwrap();
+        repo.save(product.clone()).unwrap();
 
         let found_product = repo.find_by_id(&product_id).unwrap().unwrap();
 
@@ -134,14 +141,39 @@ mod tests {
         let product_id: ProductId = "ID".parse().unwrap();
         let product = Product::new(product_id.clone(), "BRAND".parse().unwrap(), "NAME");
 
-        repo.save(&product).unwrap();
+        repo.save(product).unwrap();
 
         let updated_product = Product::new(product_id.clone(), "BRAND".parse().unwrap(), "NAME2");
 
-        repo.save(&updated_product).unwrap();
+        repo.save(updated_product.clone()).unwrap();
 
         let found_product = repo.find_by_id(&product_id).unwrap().unwrap();
 
         assert_eq!(found_product, updated_product);
+    }
+
+    #[test]
+    fn test_delete_by_id() {
+        let repo = get_repo();
+
+        let product_id: ProductId = "ID".parse().unwrap();
+        let product = Product::new(product_id.clone(), "BRAND".parse().unwrap(), "NAME");
+
+        repo.save(product.clone()).unwrap();
+
+        repo.delete_by_id(&product_id).unwrap();
+
+        let found_product = repo.find_by_id(&product_id).unwrap();
+
+        assert!(found_product.is_none());
+    }
+
+    #[test]
+    fn test_delete_by_id_not_found() {
+        let repo = get_repo();
+
+        let product_id: ProductId = "ID".parse().unwrap();
+
+        repo.delete_by_id(&product_id).unwrap();
     }
 }

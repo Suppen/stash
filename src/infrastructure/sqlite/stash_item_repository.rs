@@ -116,7 +116,7 @@ mod tests {
 
         // Save a dummy product so we don't get foreign key violations in the tests
         product_repository
-            .save(&Product::new(
+            .save(Product::new(
                 "ID".parse().unwrap(),
                 "BRAND".parse().unwrap(),
                 "NAME",
