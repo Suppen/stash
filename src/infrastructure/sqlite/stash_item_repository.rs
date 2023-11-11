@@ -36,13 +36,13 @@ impl StashItemRepository {
     fn row_to_stash_item(row: &rusqlite::Row) -> Result<StashItem, StashItemRepositoryError> {
         let id = row.get::<_, String>("id")?;
         let product_id = row.get::<_, String>("product_id")?;
-        let quantity = row.get::<_, i64>("quantity")?;
+        let quantity = row.get::<_, Quantity>("quantity")?;
         let expiry_date = row.get::<_, NaiveDate>("expiry_date")?;
 
         Ok(StashItem::new(
             Uuid::parse_str(&id)?,
             product_id.parse()?,
-            Quantity::new(quantity)?,
+            quantity,
             expiry_date,
         ))
     }
@@ -134,7 +134,7 @@ impl StashItemRepositoryTrait<StashItemRepositoryError> for StashItemRepository 
             named_params! {
                 ":id": stash_item.id().to_string(),
                 ":product_id": stash_item.product_id().value(),
-                ":quantity": stash_item.quantity().value(),
+                ":quantity": stash_item.quantity(),
                 ":expiry_date": stash_item.expiry_date(),
                 ":now": chrono::Utc::now().naive_utc(),
             },

@@ -1,6 +1,10 @@
-use rusqlite::{params, types::FromSql, ToSql};
+use rusqlite::{
+    params,
+    types::{FromSql, ToSqlOutput},
+    ToSql,
+};
 
-use crate::domain::{brand::Brand, product::ProductId};
+use crate::domain::{brand::Brand, product::ProductId, quantity::Quantity};
 
 pub fn setup_db(connection: &rusqlite::Connection) -> Result<(), rusqlite::Error> {
     connection.execute(
@@ -65,6 +69,22 @@ impl FromSql for ProductId {
     }
 }
 
+impl ToSql for Quantity {
+    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput<'_>, rusqlite::Error> {
+        Ok(ToSqlOutput::from(self.value() as i64))
+    }
+}
+
+impl FromSql for Quantity {
+    fn column_result(
+        value: rusqlite::types::ValueRef<'_>,
+    ) -> Result<Self, rusqlite::types::FromSqlError> {
+        let int = value.as_i64()?;
+
+        Quantity::new(int as u64).map_err(|_| rusqlite::types::FromSqlError::InvalidType)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -115,5 +135,29 @@ mod tests {
         let id_from_sql: ProductId = row.get(0).unwrap();
 
         assert_eq!(id, id_from_sql);
+    }
+
+    #[test]
+    fn test_quantity_to_from_sql() {
+        let quantity = Quantity::new(1).unwrap();
+
+        let connection = rusqlite::Connection::open_in_memory().unwrap();
+        connection
+            .execute("CREATE TABLE test (quantity INTEGER NOT NULL)", params![])
+            .unwrap();
+
+        connection
+            .execute("INSERT INTO test (quantity) VALUES (?)", params![quantity])
+            .unwrap();
+
+        let mut statement = connection
+            .prepare("SELECT quantity FROM test LIMIT 1")
+            .unwrap();
+        let mut rows = statement.query(params![]).unwrap();
+
+        let row = rows.next().unwrap().unwrap();
+        let quantity_from_sql: Quantity = row.get(0).unwrap();
+
+        assert_eq!(quantity, quantity_from_sql);
     }
 }

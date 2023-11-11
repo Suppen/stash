@@ -1,7 +1,7 @@
 use std::ops::{Add, Sub};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Quantity(i64);
+pub struct Quantity(u64);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum QuantityError {
@@ -19,7 +19,7 @@ impl Quantity {
     ///
     /// # Errors
     /// - `QuantityError::Zero` - The value is zero
-    pub fn new(value: i64) -> Result<Self, QuantityError> {
+    pub fn new(value: u64) -> Result<Self, QuantityError> {
         if value == 0 {
             Err(QuantityError::Zero)
         } else {
@@ -28,7 +28,7 @@ impl Quantity {
     }
 
     /// Get the value of the quantity
-    pub fn value(&self) -> i64 {
+    pub fn value(&self) -> u64 {
         self.0
     }
 }
@@ -86,7 +86,7 @@ mod tests {
     #[test]
     fn test_add_overflow() {
         assert_eq!(
-            Quantity::new(i64::MAX).unwrap() + Quantity::new(1).unwrap(),
+            Quantity::new(u64::MAX).unwrap() + Quantity::new(1).unwrap(),
             Err(QuantityError::Overflow)
         );
     }
@@ -102,7 +102,7 @@ mod tests {
     #[test]
     fn test_sub_overflow() {
         assert_eq!(
-            Quantity::new(i64::MIN).unwrap() - Quantity::new(1).unwrap(),
+            Quantity::new(1).unwrap() - Quantity::new(2).unwrap(),
             Err(QuantityError::Overflow)
         );
     }
