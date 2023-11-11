@@ -62,11 +62,12 @@ impl ProductRepositoryTrait<ProductRepositoryError> for ProductRepository {
 
     fn save(&self, product: Product) -> Result<(), ProductRepositoryError> {
         self.conn().execute(
-            "INSERT INTO products (id, brand, name) VALUES (:id, :brand, :name) ON CONFLICT(id) DO UPDATE SET brand = :brand, name = :name",
+            "INSERT INTO products (id, brand, name, created_at) VALUES (:id, :brand, :name, :now) ON CONFLICT(id) DO UPDATE SET brand = :brand, name = :name, updated_at = :now",
             named_params! {
                 ":id": product.id(),
                 ":brand": product.brand(),
                 ":name": product.name(),
+                ":now": chrono::Utc::now().naive_utc(),
             },
         )?;
 

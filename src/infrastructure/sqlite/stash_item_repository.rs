@@ -129,13 +129,14 @@ impl StashItemRepositoryTrait<StashItemRepositoryError> for StashItemRepository 
 
     fn save(&self, stash_item: StashItem) -> Result<(), StashItemRepositoryError> {
         self.conn().execute(
-            "INSERT INTO stash_items (id, product_id, quantity, expiry_date) VALUES (:id, :product_id, :quantity, :expiry_date)
-            ON CONFLICT(id) DO UPDATE SET product_id = :product_id, quantity = :quantity, expiry_date = :expiry_date",
+            "INSERT INTO stash_items (id, product_id, quantity, expiry_date, created_at) VALUES (:id, :product_id, :quantity, :expiry_date, :now)
+            ON CONFLICT(id) DO UPDATE SET product_id = :product_id, quantity = :quantity, expiry_date = :expiry_date, updated_at = :now",
             named_params! {
                 ":id": stash_item.id().to_string(),
                 ":product_id": stash_item.product_id().value(),
                 ":quantity": stash_item.quantity().value(),
                 ":expiry_date": stash_item.expiry_date(),
+                ":now": chrono::Utc::now().naive_utc(),
             },
         )?;
 
