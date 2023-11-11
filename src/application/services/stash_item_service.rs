@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use crate::{
     application::usecases::{
-        GetStashItemById, GetStashItemByProductIdAndExpiryDate, GetStashItemsExpiringBefore,
-        SaveStashItem,
+        GetStashItemById, GetStashItemByProductIdAndExpiryDate, GetStashItemsByProductId,
+        GetStashItemsExpiringBefore, SaveStashItem,
     },
     repositories::StashItemRepository,
 };
@@ -26,6 +26,16 @@ impl<E> GetStashItemById<E> for StashItemService<E> {
         id: &uuid::Uuid,
     ) -> Result<Option<crate::domain::stash_item::StashItem>, E> {
         self.stash_item_repository.find_by_id(id)
+    }
+}
+
+impl<E> GetStashItemsByProductId<E> for StashItemService<E> {
+    fn get_stash_items_by_product_id(
+        &self,
+        product_id: &crate::domain::product::ProductId,
+    ) -> Result<Vec<crate::domain::stash_item::StashItem>, E> {
+        self.stash_item_repository
+            .find_all_by_product_id(product_id)
     }
 }
 
@@ -101,6 +111,28 @@ mod test {
         let result = service.get_stash_item_by_id(&Uuid::new_v4()).unwrap();
 
         assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_get_stash_items_by_product_id() {
+        let mut stash_item_repository = MockStashItemRepository::<TestError>::new();
+        let stash_item = StashItem::new(
+            uuid::Uuid::new_v4(),
+            "ID".parse().unwrap(),
+            Quantity::new(1).unwrap(),
+            chrono::NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
+        );
+        let returned_stash_item = stash_item.clone();
+
+        stash_item_repository
+            .expect_find_all_by_product_id()
+            .with(eq(stash_item.product_id().clone()))
+            .returning(move |_| Ok(vec![returned_stash_item.clone()]));
+        let service = StashItemService::new(Arc::new(stash_item_repository));
+        let result = service.get_stash_items_by_product_id(stash_item.product_id());
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), vec![stash_item]);
     }
 
     #[test]
