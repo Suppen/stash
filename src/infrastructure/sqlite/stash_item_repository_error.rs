@@ -1,4 +1,4 @@
-use crate::domain::{product::ProductIdError, quantity::quantity_error::QuantityError};
+use crate::domain::{product::ProductIdError, quantity::QuantityError};
 
 /// The error type that is returned by the stash item repository
 #[derive(Debug)]

@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 
 use crate::domain::product::ProductId;
-use crate::domain::quantity::quantity::Quantity;
+use crate::domain::quantity::Quantity;
 use crate::domain::stash_item::StashItem;
 use crate::repositories::StashItemRepository as StashItemRepositoryTrait;
 

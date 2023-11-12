@@ -74,7 +74,7 @@ impl<E: std::error::Error> SaveStashItem<E> for StashItemService<E> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::domain::quantity::quantity::Quantity;
+    use crate::domain::quantity::Quantity;
     use crate::domain::stash_item::StashItem;
     use crate::repositories::MockStashItemRepository;
     use chrono::NaiveDate;
