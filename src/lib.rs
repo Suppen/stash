@@ -1,34 +1,42 @@
 use std::sync::{Arc, Mutex};
 
-use application::usecases::GetProductById;
+use application::services::{ProductService, StashItemService};
+use infrastructure::sqlite::{ProductRepositoryError, StashItemRepositoryError};
+use repositories::{ProductRepository, StashItemRepository};
 use rusqlite::Connection;
 
-mod application;
-mod domain;
-mod infrastructure;
-mod repositories;
+pub mod application;
+pub mod domain;
+pub mod infrastructure;
+pub mod repositories;
 
-pub fn do_stuff() -> Result<(), String> {
+pub fn get_services() -> Result<
+    (
+        ProductService<ProductRepositoryError>,
+        StashItemService<StashItemRepositoryError>,
+    ),
+    String,
+> {
     let connection = Connection::open_in_memory().unwrap();
     infrastructure::sqlite::db::setup_db(&connection).unwrap();
 
     let shared_connection = Arc::new(Mutex::new(connection));
 
-    let product_repository =
-        infrastructure::sqlite::ProductRepository::new(shared_connection.clone());
-    let _stash_item_repository =
-        infrastructure::sqlite::StashItemRepository::new(shared_connection.clone());
+    let product_repository: Box<dyn ProductRepository<ProductRepositoryError>> = Box::new(
+        infrastructure::sqlite::ProductRepository::new(shared_connection.clone()),
+    );
+    let stash_item_repository: Box<dyn StashItemRepository<StashItemRepositoryError>> = Box::new(
+        infrastructure::sqlite::StashItemRepository::new(shared_connection.clone()),
+    );
 
-    let _shared_product_repository = Arc::new(product_repository);
+    let shared_product_repository = Arc::new(Mutex::new(product_repository));
+    let shared_stash_item_repository = Arc::new(Mutex::new(stash_item_repository));
 
     let product_service =
-        application::services::ProductService::new(_shared_product_repository.clone());
+        application::services::ProductService::new(shared_product_repository.clone());
 
-    let product = product_service
-        .get_product_by_id(&"ID".parse().unwrap())
-        .unwrap();
+    let stash_item_service =
+        application::services::StashItemService::new(shared_stash_item_repository.clone());
 
-    println!("{:?}", product);
-
-    Ok(())
+    Ok((product_service, stash_item_service))
 }

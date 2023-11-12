@@ -4,7 +4,7 @@ use rusqlite::{
     ToSql,
 };
 
-use crate::domain::{brand::Brand, product::ProductId, quantity::Quantity};
+use crate::domain::{brand::Brand, product::ProductId, quantity::quantity::Quantity};
 
 pub fn setup_db(connection: &rusqlite::Connection) -> Result<(), rusqlite::Error> {
     connection.execute(

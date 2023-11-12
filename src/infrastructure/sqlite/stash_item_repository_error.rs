@@ -1,4 +1,4 @@
-use crate::domain::{product::ProductIdError, quantity::QuantityError};
+use crate::domain::{product::ProductIdError, quantity::quantity_error::QuantityError};
 
 /// The error type that is returned by the stash item repository
 #[derive(Debug)]
@@ -34,5 +34,26 @@ impl From<QuantityError> for StashItemRepositoryError {
 impl From<rusqlite::Error> for StashItemRepositoryError {
     fn from(error: rusqlite::Error) -> Self {
         Self::DatabaseError(error)
+    }
+}
+
+impl std::error::Error for StashItemRepositoryError {}
+
+impl std::fmt::Display for StashItemRepositoryError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            StashItemRepositoryError::InvalidStashItemId(error) => {
+                write!(f, "Invalid stash item id: {}", error)
+            }
+            StashItemRepositoryError::InvalidProductId(error) => {
+                write!(f, "Invalid product id: {}", error)
+            }
+            StashItemRepositoryError::InvalidQuantity(error) => {
+                write!(f, "Invalid quantity: {}", error)
+            }
+            StashItemRepositoryError::DatabaseError(error) => {
+                write!(f, "Database error: {}", error)
+            }
+        }
     }
 }
