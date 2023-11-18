@@ -1,7 +1,7 @@
 use chrono::NaiveDate;
 use uuid::Uuid;
 
-use crate::domain::{product::ProductId, stash_item::StashItem};
+use crate::domain::{entities::StashItem, value_objects::ProductId};
 
 #[cfg_attr(test, mockall::automock)]
 pub trait StashItemRepository<E: std::error::Error + Send + Sync> {

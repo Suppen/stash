@@ -1,6 +1,6 @@
 use chrono::NaiveDate;
 
-use crate::domain::{product::ProductId, stash_item::StashItem};
+use crate::domain::{entities::StashItem, value_objects::ProductId};
 
 pub trait GetStashItemByProductIdAndExpiryDate<E> {
     /// Get a stash item by its product id and expiry date. This uniquely identifies a stash item,

@@ -1,4 +1,4 @@
-use crate::domain::product::ProductId;
+use crate::domain::value_objects::ProductId;
 
 pub trait DeleteProductById<E> {
     /// Deletes a product by id

@@ -1,4 +1,4 @@
-use crate::domain::{product::ProductId, stash_item::StashItem};
+use crate::domain::{entities::StashItem, value_objects::ProductId};
 
 pub trait GetStashItemsByProductId<E> {
     /// Get all stash items by product id.

@@ -1,15 +1,10 @@
 use std::str::FromStr;
 
+use crate::domain::errors::ProductIdError;
+
 /// ID of a product
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ProductId(String);
-
-/// Possible errors when creating a product ID
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum ProductIdError {
-    /// The ID cannot be empty
-    Empty,
-}
 
 impl ProductId {
     pub fn new(value: String) -> Result<Self, ProductIdError> {

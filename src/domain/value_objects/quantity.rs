@@ -1,4 +1,4 @@
-use super::quantity_error::QuantityError;
+use crate::domain::errors::QuantityError;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Quantity(u64);

@@ -1,8 +1,8 @@
 use getset::{Getters, Setters};
 
-use crate::domain::{brand::Brand, entity::Entity};
+use crate::domain::value_objects::{Brand, ProductId};
 
-use super::ProductId;
+use super::Entity;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Getters, Setters)]
 pub struct Product {

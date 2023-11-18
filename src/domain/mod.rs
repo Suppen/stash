@@ -1,5 +1,4 @@
-pub mod brand;
-pub mod entity;
-pub mod product;
-pub mod quantity;
-pub mod stash_item;
+pub mod entities;
+pub mod errors;
+pub mod repositories;
+pub mod value_objects;

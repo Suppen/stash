@@ -2,9 +2,9 @@ use chrono::NaiveDate;
 use getset::{Getters, Setters};
 use uuid::Uuid;
 
-use crate::domain::{entity::Entity, product::ProductId};
+use crate::domain::value_objects::{ProductId, Quantity};
 
-use super::quantity::Quantity;
+use super::Entity;
 
 /// A stash item is an instance of a product in the stash
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Getters, Setters)]

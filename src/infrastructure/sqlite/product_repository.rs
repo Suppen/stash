@@ -1,9 +1,12 @@
 use std::sync::{Arc, Mutex};
 
-use crate::domain::brand::Brand;
-use crate::domain::product::{Product, ProductId};
-use crate::repositories::ProductRepository as ProductRepositoryTrait;
 use rusqlite::{named_params, Connection};
+
+use crate::domain::{
+    entities::Product,
+    repositories::ProductRepository as ProductRepositoryTrait,
+    value_objects::{Brand, ProductId},
+};
 
 use super::product_repository_error::ProductRepositoryError;
 
@@ -84,7 +87,7 @@ impl ProductRepositoryTrait<ProductRepositoryError> for ProductRepository {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{domain::product::ProductId, infrastructure::sqlite::db::setup_db};
+    use crate::{domain::value_objects::ProductId, infrastructure::sqlite::db::setup_db};
 
     fn get_repo() -> ProductRepository {
         // Create an in-memory database

@@ -1,13 +1,12 @@
 use std::sync::{Arc, Mutex};
 
 use application::services::{ProductService, StashItemService};
+use domain::repositories::{ProductRepository, StashItemRepository};
 use infrastructure::sqlite::{db::setup_db, ProductRepositoryError, StashItemRepositoryError};
-use repositories::{ProductRepository, StashItemRepository};
 
 pub mod application;
 pub mod domain;
 pub mod infrastructure;
-pub mod repositories;
 
 pub fn get_services() -> Result<
     (

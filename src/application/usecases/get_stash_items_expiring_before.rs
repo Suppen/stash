@@ -1,6 +1,6 @@
 use chrono::NaiveDate;
 
-use crate::domain::stash_item::StashItem;
+use crate::domain::entities::StashItem;
 
 pub trait GetStashItemsExpiringBefore<E> {
     /// Get all stash items expiring before a given date, excluding the given date.

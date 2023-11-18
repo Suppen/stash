@@ -4,10 +4,11 @@ use chrono::NaiveDate;
 use rusqlite::{named_params, Connection};
 use uuid::Uuid;
 
-use crate::domain::product::ProductId;
-use crate::domain::quantity::Quantity;
-use crate::domain::stash_item::StashItem;
-use crate::repositories::StashItemRepository as StashItemRepositoryTrait;
+use crate::domain::{
+    entities::StashItem,
+    repositories::StashItemRepository as StashItemRepositoryTrait,
+    value_objects::{ProductId, Quantity},
+};
 
 use super::StashItemRepositoryError;
 
@@ -153,9 +154,8 @@ impl StashItemRepositoryTrait<StashItemRepositoryError> for StashItemRepository 
 #[cfg(test)]
 mod tests {
     use crate::{
-        domain::product::Product,
+        domain::{entities::Product, repositories::ProductRepository as ProductRepositoryTrait},
         infrastructure::sqlite::{db::setup_db, ProductRepository},
-        repositories::ProductRepository as ProductRepositoryTrait,
     };
 
     use super::*;

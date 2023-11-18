@@ -2,8 +2,7 @@ use std::sync::Arc;
 
 use crate::{
     application::usecases::{DeleteProductById, GetProductById, SaveProduct},
-    domain::product::{Product, ProductId},
-    repositories::ProductRepository,
+    domain::{entities::Product, repositories::ProductRepository, value_objects::ProductId},
 };
 
 pub struct ProductService<E: std::error::Error> {
@@ -38,7 +37,7 @@ impl<E: std::error::Error + Send + Sync> DeleteProductById<E> for ProductService
 mod test {
     use mockall::predicate::eq;
 
-    use crate::repositories::MockProductRepository;
+    use crate::domain::repositories::MockProductRepository;
 
     use super::*;
 

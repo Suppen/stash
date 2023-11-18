@@ -1,4 +1,4 @@
-use crate::domain::product::Product;
+use crate::domain::entities::Product;
 
 pub trait SaveProduct<E> {
     /// Saves a product

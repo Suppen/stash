@@ -1,4 +1,4 @@
-use crate::domain::product::{Product, ProductId};
+use crate::domain::{entities::Product, value_objects::ProductId};
 
 pub trait GetProductById<E> {
     /// Gets a product by id

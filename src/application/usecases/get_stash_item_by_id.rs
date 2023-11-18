@@ -1,6 +1,6 @@
 use uuid::Uuid;
 
-use crate::domain::stash_item::StashItem;
+use crate::domain::entities::StashItem;
 
 pub trait GetStashItemById<E> {
     /// Get a stash item by its id

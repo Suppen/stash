@@ -1,4 +1,4 @@
-use crate::domain::product::{Product, ProductId};
+use crate::domain::{entities::Product, value_objects::ProductId};
 
 #[cfg_attr(test, mockall::automock)]
 pub trait ProductRepository<E: std::error::Error + Send + Sync>: Send + Sync {

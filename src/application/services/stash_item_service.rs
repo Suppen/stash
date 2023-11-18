@@ -8,7 +8,7 @@ use crate::{
         GetStashItemById, GetStashItemByProductIdAndExpiryDate, GetStashItemsByProductId,
         GetStashItemsExpiringBefore, SaveStashItem,
     },
-    repositories::StashItemRepository,
+    domain::{entities::StashItem, repositories::StashItemRepository, value_objects::ProductId},
 };
 
 pub struct StashItemService<E: std::error::Error> {
@@ -24,19 +24,13 @@ impl<E: std::error::Error + Send + Sync> StashItemService<E> {
 }
 
 impl<E: std::error::Error + Send + Sync> GetStashItemById<E> for StashItemService<E> {
-    fn get_stash_item_by_id(
-        &self,
-        id: &Uuid,
-    ) -> Result<Option<crate::domain::stash_item::StashItem>, E> {
+    fn get_stash_item_by_id(&self, id: &Uuid) -> Result<Option<StashItem>, E> {
         self.stash_item_repository.find_by_id(id)
     }
 }
 
 impl<E: std::error::Error + Send + Sync> GetStashItemsByProductId<E> for StashItemService<E> {
-    fn get_stash_items_by_product_id(
-        &self,
-        product_id: &crate::domain::product::ProductId,
-    ) -> Result<Vec<crate::domain::stash_item::StashItem>, E> {
+    fn get_stash_items_by_product_id(&self, product_id: &ProductId) -> Result<Vec<StashItem>, E> {
         self.stash_item_repository
             .find_all_by_product_id(product_id)
     }
@@ -47,35 +41,31 @@ impl<E: std::error::Error + Send + Sync> GetStashItemByProductIdAndExpiryDate<E>
 {
     fn get_stash_item_by_product_id_and_expiry_date(
         &self,
-        product_id: &crate::domain::product::ProductId,
+        product_id: &ProductId,
         expiry_date: &NaiveDate,
-    ) -> Result<Option<crate::domain::stash_item::StashItem>, E> {
+    ) -> Result<Option<StashItem>, E> {
         self.stash_item_repository
             .find_by_product_id_and_expiry_date(product_id, expiry_date)
     }
 }
 
 impl<E: std::error::Error + Send + Sync> GetStashItemsExpiringBefore<E> for StashItemService<E> {
-    fn get_stash_items_expiring_before(
-        &self,
-        date: &NaiveDate,
-    ) -> Result<Vec<crate::domain::stash_item::StashItem>, E> {
+    fn get_stash_items_expiring_before(&self, date: &NaiveDate) -> Result<Vec<StashItem>, E> {
         self.stash_item_repository.find_all_expiring_before(date)
     }
 }
 
 impl<E: std::error::Error + Send + Sync> SaveStashItem<E> for StashItemService<E> {
-    fn save_stash_item(&self, stash_item: crate::domain::stash_item::StashItem) -> Result<(), E> {
+    fn save_stash_item(&self, stash_item: StashItem) -> Result<(), E> {
         self.stash_item_repository.save(stash_item)
     }
 }
 
 #[cfg(test)]
 mod test {
+    use crate::domain::{repositories::MockStashItemRepository, value_objects::Quantity};
+
     use super::*;
-    use crate::domain::quantity::Quantity;
-    use crate::domain::stash_item::StashItem;
-    use crate::repositories::MockStashItemRepository;
     use chrono::NaiveDate;
     use mockall::predicate::*;
     use uuid::Uuid;

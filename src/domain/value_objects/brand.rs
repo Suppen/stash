@@ -1,6 +1,6 @@
 use std::{fmt::Display, ops::Deref, str::FromStr};
 
-use super::BrandError;
+use crate::domain::errors::BrandError;
 
 /// Brand of a product
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

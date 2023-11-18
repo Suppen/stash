@@ -1,4 +1,4 @@
-use crate::domain::stash_item::StashItem;
+use crate::domain::entities::StashItem;
 
 pub trait SaveStashItem<E> {
     /// Save a stash item. This creates a new stash item if it does not exist, or updates an existing one.

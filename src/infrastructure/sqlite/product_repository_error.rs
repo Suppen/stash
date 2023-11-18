@@ -1,4 +1,4 @@
-use crate::domain::{brand::BrandError, product::ProductIdError};
+use crate::domain::errors::{BrandError, ProductIdError};
 
 /// The error type that is returned by the product repository
 #[derive(Debug)]
