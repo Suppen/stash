@@ -1,6 +1,6 @@
-use crate::domain::entities::Product;
+use crate::domain::{entities::Product, errors::ProductRepositoryError};
 
-pub trait SaveProduct<E> {
+pub trait SaveProduct {
     /// Saves a product
     ///
     /// # Parameters
@@ -9,5 +9,5 @@ pub trait SaveProduct<E> {
     /// # Returns
     /// * `Ok(())` if the product was saved
     /// * `Err(_)` if the underlying data store fails to save the product
-    fn save_product(&self, product: Product) -> Result<(), E>;
+    fn save_product(&self, product: Product) -> Result<(), ProductRepositoryError>;
 }

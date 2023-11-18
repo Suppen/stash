@@ -4,11 +4,10 @@ use rusqlite::{named_params, Connection};
 
 use crate::domain::{
     entities::Product,
+    errors::ProductRepositoryError,
     repositories::ProductRepository as ProductRepositoryTrait,
     value_objects::{Brand, ProductId},
 };
-
-use super::product_repository_error::ProductRepositoryError;
 
 /// A repository for [`Product`]s using SQLite as the underlying storage.
 pub struct ProductRepository {
@@ -42,7 +41,7 @@ impl ProductRepository {
     }
 }
 
-impl ProductRepositoryTrait<ProductRepositoryError> for ProductRepository {
+impl ProductRepositoryTrait for ProductRepository {
     fn find_by_id(&self, id: &ProductId) -> Result<Option<Product>, ProductRepositoryError> {
         let conn = self.conn();
         let mut stmt =

@@ -97,6 +97,12 @@ impl FromSql for Quantity {
     }
 }
 
+impl From<rusqlite::Error> for crate::domain::errors::ProductRepositoryError {
+    fn from(error: rusqlite::Error) -> Self {
+        Self::PersisteneError(error.to_string())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -2,27 +2,20 @@ use std::sync::{Arc, Mutex};
 
 use application::services::{ProductService, StashItemService};
 use domain::repositories::{ProductRepository, StashItemRepository};
-use infrastructure::persistence::sqlite::{
-    db::setup_db, ProductRepositoryError, StashItemRepositoryError,
-};
+use infrastructure::persistence::sqlite::{db::setup_db, StashItemRepositoryError};
 
 pub mod application;
 pub mod domain;
 pub mod infrastructure;
 
-pub fn get_services() -> Result<
-    (
-        ProductService<ProductRepositoryError>,
-        StashItemService<StashItemRepositoryError>,
-    ),
-    String,
-> {
+pub fn get_services() -> Result<(ProductService, StashItemService<StashItemRepositoryError>), String>
+{
     let connection = rusqlite::Connection::open_in_memory().map_err(|e| e.to_string())?;
     setup_db(&connection).map_err(|e| e.to_string())?;
 
     let shared_connection = Arc::new(Mutex::new(connection));
 
-    let product_repository: Box<dyn ProductRepository<ProductRepositoryError>> = Box::new(
+    let product_repository: Box<dyn ProductRepository> = Box::new(
         infrastructure::persistence::sqlite::ProductRepository::new(shared_connection.clone()),
     );
     let stash_item_repository: Box<dyn StashItemRepository<StashItemRepositoryError>> = Box::new(
