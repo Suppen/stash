@@ -6,7 +6,7 @@ use crate::domain::{
 };
 
 #[cfg_attr(test, mockall::automock)]
-pub trait StashItemRepository {
+pub trait StashItemRepository: Sync + Send {
     /// Returns one stash item by id
     ///
     /// # Parameters

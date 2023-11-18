@@ -1,34 +1,37 @@
-fn main() {
-    println!("Hello, world!");
+use actix_web::{web::Data, App, HttpServer};
+use rsstash::{
+    application::{services::ProductService, usecases::GetProductById},
+    domain::errors::ProductRepositoryError,
+    get_services,
+};
+
+#[actix_web::get("/")]
+async fn index(product_service: Data<ProductService>) -> String {
+    let result = product_service.get_product_by_id(&"1".parse().unwrap());
+
+    match result {
+        Ok(None) => "Product not found".to_string(),
+        Ok(Some(product)) => format!("{}, {}", product.brand(), product.name()),
+        Err(ProductRepositoryError::ProductIdError(_)) => "Invalid product id".to_string(),
+        Err(ProductRepositoryError::BrandError(_)) => "Invalid brand".to_string(),
+        Err(ProductRepositoryError::PersisteneError(error)) => error,
+    }
 }
-//use std::sync::Mutex;
 
-//use actix_web::{web::Data, App, HttpServer};
-//use rsstash::get_services;
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    let (product_service, stash_item_service) = get_services().unwrap();
 
-//#[actix_web::get("/")]
-//async fn index(cake: Data<Mutex<usize>>) -> String {
-//// Incease the cake count
-//let mut val = cake.lock().unwrap();
-//*val += 1;
-//format!("Hello world! {}", val.to_string())
-//}
+    let product_service = Data::new(product_service);
+    let stash_item_service = Data::new(stash_item_service);
 
-//#[actix_web::main]
-//async fn main() -> std::io::Result<()> {
-//let (product_service, stash_item_service) = get_services().unwrap();
-
-//let shared_product_service = Data::new(Mutex::new(product_service));
-
-//let cake = Data::new(Mutex::new(0usize));
-
-//HttpServer::new(move || {
-//App::new()
-//.app_data(cake.clone())
-//.app_data(shared_product_service.clone())
-//.service(index)
-//})
-//.bind("0.0.0.0:8080")?
-//.run()
-//.await
-//}
+    HttpServer::new(move || {
+        App::new()
+            .app_data(product_service.clone())
+            .app_data(stash_item_service.clone())
+            .service(index)
+    })
+    .bind("0.0.0.0:8080")?
+    .run()
+    .await
+}
