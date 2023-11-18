@@ -1,10 +1,12 @@
 use chrono::NaiveDate;
 use uuid::Uuid;
 
-use crate::domain::{entities::StashItem, value_objects::ProductId};
+use crate::domain::{
+    entities::StashItem, errors::StashItemRepositoryError, value_objects::ProductId,
+};
 
 #[cfg_attr(test, mockall::automock)]
-pub trait StashItemRepository<E: std::error::Error + Send + Sync> {
+pub trait StashItemRepository {
     /// Returns one stash item by id
     ///
     /// # Parameters
@@ -14,7 +16,7 @@ pub trait StashItemRepository<E: std::error::Error + Send + Sync> {
     /// `Ok(Some(stash_item))` if the stash item exists
     /// `Ok(None)` if the stash item does not exist
     /// `Err(_)` if the underlying data store fails to get the stash item
-    fn find_by_id(&self, id: &Uuid) -> Result<Option<StashItem>, E>;
+    fn find_by_id(&self, id: &Uuid) -> Result<Option<StashItem>, StashItemRepositoryError>;
 
     /// Returns all stash items with the given product id
     ///
@@ -24,7 +26,10 @@ pub trait StashItemRepository<E: std::error::Error + Send + Sync> {
     /// # Returns
     /// `Ok(stash_items)` All stash items with the given product id.
     /// `Err(_)` if the underlying data store fails to get the stash items
-    fn find_all_by_product_id(&self, product_id: &ProductId) -> Result<Vec<StashItem>, E>;
+    fn find_all_by_product_id(
+        &self,
+        product_id: &ProductId,
+    ) -> Result<Vec<StashItem>, StashItemRepositoryError>;
 
     /// Returns one stash item by its unique combo of product id and expiry date
     ///
@@ -40,7 +45,7 @@ pub trait StashItemRepository<E: std::error::Error + Send + Sync> {
         &self,
         product_id: &ProductId,
         expiry_date: &NaiveDate,
-    ) -> Result<Option<StashItem>, E>;
+    ) -> Result<Option<StashItem>, StashItemRepositoryError>;
 
     /// Returns all stash items expiring before a given date, excluding the given date
     ///
@@ -50,7 +55,10 @@ pub trait StashItemRepository<E: std::error::Error + Send + Sync> {
     /// # Returns
     /// `Ok(stash_items)` All stash items expiring before the given date.
     /// `Err(_)` if the underlying data store fails to get the stash items
-    fn find_all_expiring_before(&self, date: &NaiveDate) -> Result<Vec<StashItem>, E>;
+    fn find_all_expiring_before(
+        &self,
+        date: &NaiveDate,
+    ) -> Result<Vec<StashItem>, StashItemRepositoryError>;
 
     /// Saves a stash item to the repository, or updates it if it already exists
     ///
@@ -60,7 +68,7 @@ pub trait StashItemRepository<E: std::error::Error + Send + Sync> {
     /// # Returns
     /// * `Ok(())` if the stash item was saved
     /// * `Err(_)` if the repository fails to save the stash item
-    fn save(&self, stash_item: StashItem) -> Result<(), E>;
+    fn save(&self, stash_item: StashItem) -> Result<(), StashItemRepositoryError>;
 
     /// Deletes a stash item from the repository
     ///
@@ -70,5 +78,5 @@ pub trait StashItemRepository<E: std::error::Error + Send + Sync> {
     /// # Returns
     /// * `Ok(())` if the stash item was deleted, or was not there in the first place
     /// * `Err(_)` if the repository fails to delete the stash item
-    fn delete(&self, id: &Uuid) -> Result<(), E>;
+    fn delete(&self, id: &Uuid) -> Result<(), StashItemRepositoryError>;
 }

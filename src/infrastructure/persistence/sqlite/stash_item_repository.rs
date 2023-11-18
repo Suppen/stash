@@ -6,11 +6,10 @@ use uuid::Uuid;
 
 use crate::domain::{
     entities::StashItem,
+    errors::StashItemRepositoryError,
     repositories::StashItemRepository as StashItemRepositoryTrait,
     value_objects::{ProductId, Quantity},
 };
-
-use super::StashItemRepositoryError;
 
 /// A repository for [`StashItem`]s.
 pub struct StashItemRepository {
@@ -57,7 +56,7 @@ impl StashItemRepository {
     }
 }
 
-impl StashItemRepositoryTrait<StashItemRepositoryError> for StashItemRepository {
+impl StashItemRepositoryTrait for StashItemRepository {
     fn find_by_id(&self, id: &Uuid) -> Result<Option<StashItem>, StashItemRepositoryError> {
         let conn = self.conn();
         let mut stmt = conn.prepare(

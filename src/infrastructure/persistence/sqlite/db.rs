@@ -4,7 +4,10 @@ use rusqlite::{
     ToSql,
 };
 
-use crate::domain::value_objects::{Brand, ProductId, Quantity};
+use crate::domain::{
+    errors::{ProductRepositoryError, StashItemRepositoryError},
+    value_objects::{Brand, ProductId, Quantity},
+};
 
 pub fn setup_db(connection: &rusqlite::Connection) -> Result<(), rusqlite::Error> {
     connection.execute(
@@ -97,7 +100,13 @@ impl FromSql for Quantity {
     }
 }
 
-impl From<rusqlite::Error> for crate::domain::errors::ProductRepositoryError {
+impl From<rusqlite::Error> for ProductRepositoryError {
+    fn from(error: rusqlite::Error) -> Self {
+        Self::PersisteneError(error.to_string())
+    }
+}
+
+impl From<rusqlite::Error> for StashItemRepositoryError {
     fn from(error: rusqlite::Error) -> Self {
         Self::PersisteneError(error.to_string())
     }

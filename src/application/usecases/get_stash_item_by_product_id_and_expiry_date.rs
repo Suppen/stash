@@ -1,8 +1,10 @@
 use chrono::NaiveDate;
 
-use crate::domain::{entities::StashItem, value_objects::ProductId};
+use crate::domain::{
+    entities::StashItem, errors::StashItemRepositoryError, value_objects::ProductId,
+};
 
-pub trait GetStashItemByProductIdAndExpiryDate<E> {
+pub trait GetStashItemByProductIdAndExpiryDate {
     /// Get a stash item by its product id and expiry date. This uniquely identifies a stash item,
     /// so there will only be one stash item returned.
     ///
@@ -18,5 +20,5 @@ pub trait GetStashItemByProductIdAndExpiryDate<E> {
         &self,
         product_id: &ProductId,
         expiry_date: &NaiveDate,
-    ) -> Result<Option<StashItem>, E>;
+    ) -> Result<Option<StashItem>, StashItemRepositoryError>;
 }

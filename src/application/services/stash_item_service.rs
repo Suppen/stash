@@ -8,55 +8,65 @@ use crate::{
         GetStashItemById, GetStashItemByProductIdAndExpiryDate, GetStashItemsByProductId,
         GetStashItemsExpiringBefore, SaveStashItem,
     },
-    domain::{entities::StashItem, repositories::StashItemRepository, value_objects::ProductId},
+    domain::{
+        entities::StashItem, errors::StashItemRepositoryError, repositories::StashItemRepository,
+        value_objects::ProductId,
+    },
 };
 
-pub struct StashItemService<E: std::error::Error> {
-    pub stash_item_repository: Arc<Box<dyn StashItemRepository<E>>>,
+pub struct StashItemService {
+    pub stash_item_repository: Arc<Box<dyn StashItemRepository>>,
 }
 
-impl<E: std::error::Error + Send + Sync> StashItemService<E> {
-    pub fn new(stash_item_repository: Arc<Box<dyn StashItemRepository<E>>>) -> Self {
+impl StashItemService {
+    pub fn new(stash_item_repository: Arc<Box<dyn StashItemRepository>>) -> Self {
         Self {
             stash_item_repository,
         }
     }
 }
 
-impl<E: std::error::Error + Send + Sync> GetStashItemById<E> for StashItemService<E> {
-    fn get_stash_item_by_id(&self, id: &Uuid) -> Result<Option<StashItem>, E> {
+impl GetStashItemById for StashItemService {
+    fn get_stash_item_by_id(
+        &self,
+        id: &Uuid,
+    ) -> Result<Option<StashItem>, StashItemRepositoryError> {
         self.stash_item_repository.find_by_id(id)
     }
 }
 
-impl<E: std::error::Error + Send + Sync> GetStashItemsByProductId<E> for StashItemService<E> {
-    fn get_stash_items_by_product_id(&self, product_id: &ProductId) -> Result<Vec<StashItem>, E> {
+impl GetStashItemsByProductId for StashItemService {
+    fn get_stash_items_by_product_id(
+        &self,
+        product_id: &ProductId,
+    ) -> Result<Vec<StashItem>, StashItemRepositoryError> {
         self.stash_item_repository
             .find_all_by_product_id(product_id)
     }
 }
 
-impl<E: std::error::Error + Send + Sync> GetStashItemByProductIdAndExpiryDate<E>
-    for StashItemService<E>
-{
+impl GetStashItemByProductIdAndExpiryDate for StashItemService {
     fn get_stash_item_by_product_id_and_expiry_date(
         &self,
         product_id: &ProductId,
         expiry_date: &NaiveDate,
-    ) -> Result<Option<StashItem>, E> {
+    ) -> Result<Option<StashItem>, StashItemRepositoryError> {
         self.stash_item_repository
             .find_by_product_id_and_expiry_date(product_id, expiry_date)
     }
 }
 
-impl<E: std::error::Error + Send + Sync> GetStashItemsExpiringBefore<E> for StashItemService<E> {
-    fn get_stash_items_expiring_before(&self, date: &NaiveDate) -> Result<Vec<StashItem>, E> {
+impl GetStashItemsExpiringBefore for StashItemService {
+    fn get_stash_items_expiring_before(
+        &self,
+        date: &NaiveDate,
+    ) -> Result<Vec<StashItem>, StashItemRepositoryError> {
         self.stash_item_repository.find_all_expiring_before(date)
     }
 }
 
-impl<E: std::error::Error + Send + Sync> SaveStashItem<E> for StashItemService<E> {
-    fn save_stash_item(&self, stash_item: StashItem) -> Result<(), E> {
+impl SaveStashItem for StashItemService {
+    fn save_stash_item(&self, stash_item: StashItem) -> Result<(), StashItemRepositoryError> {
         self.stash_item_repository.save(stash_item)
     }
 }
@@ -70,18 +80,9 @@ mod test {
     use mockall::predicate::*;
     use uuid::Uuid;
 
-    #[derive(Debug)]
-    struct TestError;
-    impl std::error::Error for TestError {}
-    impl std::fmt::Display for TestError {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            write!(f, "")
-        }
-    }
-
     #[test]
     fn test_get_stash_item_by_id() {
-        let mut stash_item_repository = MockStashItemRepository::<TestError>::new();
+        let mut stash_item_repository = MockStashItemRepository::new();
         let stash_item = StashItem::new(
             uuid::Uuid::new_v4(),
             "ID".parse().unwrap(),
@@ -103,7 +104,7 @@ mod test {
 
     #[test]
     fn test_get_stash_item_by_id_not_found() {
-        let mut stash_item_repository = MockStashItemRepository::<TestError>::new();
+        let mut stash_item_repository = MockStashItemRepository::new();
 
         stash_item_repository
             .expect_find_by_id()
@@ -116,7 +117,7 @@ mod test {
 
     #[test]
     fn test_get_stash_items_by_product_id() {
-        let mut stash_item_repository = MockStashItemRepository::<TestError>::new();
+        let mut stash_item_repository = MockStashItemRepository::new();
         let stash_item = StashItem::new(
             uuid::Uuid::new_v4(),
             "ID".parse().unwrap(),
@@ -138,7 +139,7 @@ mod test {
 
     #[test]
     fn test_get_stash_item_by_product_id_and_expiry_date() {
-        let mut stash_item_repository = MockStashItemRepository::<TestError>::new();
+        let mut stash_item_repository = MockStashItemRepository::new();
         let stash_item = StashItem::new(
             uuid::Uuid::new_v4(),
             "ID".parse().unwrap(),
@@ -166,7 +167,7 @@ mod test {
 
     #[test]
     fn test_get_stash_item_by_product_id_and_expiry_date_not_found() {
-        let mut stash_item_repository = MockStashItemRepository::<TestError>::new();
+        let mut stash_item_repository = MockStashItemRepository::new();
 
         stash_item_repository
             .expect_find_by_product_id_and_expiry_date()
@@ -187,7 +188,7 @@ mod test {
         let date_1 = NaiveDate::from_ymd_opt(2021, 1, 1).unwrap();
         let date_2 = NaiveDate::from_ymd_opt(2021, 1, 2).unwrap();
 
-        let mut stash_item_repository = MockStashItemRepository::<TestError>::new();
+        let mut stash_item_repository = MockStashItemRepository::new();
         let stash_item = StashItem::new(
             uuid::Uuid::new_v4(),
             "ID".parse().unwrap(),
@@ -208,7 +209,7 @@ mod test {
 
     #[test]
     fn test_save_stash_item() {
-        let mut stash_item_repository = MockStashItemRepository::<TestError>::new();
+        let mut stash_item_repository = MockStashItemRepository::new();
         let stash_item = StashItem::new(
             uuid::Uuid::new_v4(),
             "ID".parse().unwrap(),

@@ -1,8 +1,8 @@
 use chrono::NaiveDate;
 
-use crate::domain::entities::StashItem;
+use crate::domain::{entities::StashItem, errors::StashItemRepositoryError};
 
-pub trait GetStashItemsExpiringBefore<E> {
+pub trait GetStashItemsExpiringBefore {
     /// Get all stash items expiring before a given date, excluding the given date.
     ///
     /// # Parameters
@@ -11,5 +11,8 @@ pub trait GetStashItemsExpiringBefore<E> {
     /// # Returns
     /// `Ok(stash_items)` All stash items expiring before the given date.
     /// `Err(_)` if the underlying data store fails to get the stash items
-    fn get_stash_items_expiring_before(&self, date: &NaiveDate) -> Result<Vec<StashItem>, E>;
+    fn get_stash_items_expiring_before(
+        &self,
+        date: &NaiveDate,
+    ) -> Result<Vec<StashItem>, StashItemRepositoryError>;
 }

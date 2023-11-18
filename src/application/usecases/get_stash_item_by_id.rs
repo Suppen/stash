@@ -1,8 +1,8 @@
 use uuid::Uuid;
 
-use crate::domain::entities::StashItem;
+use crate::domain::{entities::StashItem, errors::StashItemRepositoryError};
 
-pub trait GetStashItemById<E> {
+pub trait GetStashItemById {
     /// Get a stash item by its id
     ///
     /// # Parameters
@@ -12,5 +12,8 @@ pub trait GetStashItemById<E> {
     /// `Ok(Some(stash_item))` if the stash item exists
     /// `Ok(None)` if the stash item does not exist
     /// `Err(_)` if the underlying data store fails to get the stash item
-    fn get_stash_item_by_id(&self, id: &Uuid) -> Result<Option<StashItem>, E>;
+    fn get_stash_item_by_id(
+        &self,
+        id: &Uuid,
+    ) -> Result<Option<StashItem>, StashItemRepositoryError>;
 }

@@ -1,6 +1,6 @@
-use crate::domain::entities::StashItem;
+use crate::domain::{entities::StashItem, errors::StashItemRepositoryError};
 
-pub trait SaveStashItem<E> {
+pub trait SaveStashItem {
     /// Save a stash item. This creates a new stash item if it does not exist, or updates an existing one.
     ///
     /// # Parameters
@@ -9,5 +9,5 @@ pub trait SaveStashItem<E> {
     /// # Returns
     /// * `Ok(())` if the stash item was saved.
     /// * `Err(_)` if the underlying data store fails to save the stash item.
-    fn save_stash_item(&self, stash_item: StashItem) -> Result<(), E>;
+    fn save_stash_item(&self, stash_item: StashItem) -> Result<(), StashItemRepositoryError>;
 }
