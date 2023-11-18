@@ -39,6 +39,6 @@ impl From<rusqlite::Error> for ProductRepositoryError {
 
 impl From<rusqlite::Error> for StashItemRepositoryError {
     fn from(error: rusqlite::Error) -> Self {
-        Self::PersisteneError(error.to_string())
+        Self::PersistenceError(error.to_string())
     }
 }

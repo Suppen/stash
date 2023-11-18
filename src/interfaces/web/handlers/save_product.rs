@@ -3,7 +3,7 @@ use actix_web::{web, HttpResponse};
 use crate::{
     application::{services::ProductService, usecases::SaveProduct},
     domain::entities::Product,
-    interfaces::web::dtos::ProductDTO,
+    interfaces::web::{dtos::ProductDTO, errors::ProductParseError},
 };
 
 pub async fn save_product(
@@ -12,7 +12,12 @@ pub async fn save_product(
 ) -> HttpResponse {
     let product = match Product::try_from(body.into_inner()) {
         Ok(product) => product,
-        Err(err) => return HttpResponse::BadRequest().body(format!("Invalid product: {}", err)),
+        Err(err) => {
+            return HttpResponse::BadRequest().body(match err {
+                ProductParseError::ProductIdError(err) => format!("Invalid product id: {}", err),
+                ProductParseError::BrandError(err) => format!("Invalid brand: {}", err),
+            })
+        }
     };
 
     match product_service.save_product(product) {

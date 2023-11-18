@@ -10,7 +10,7 @@ pub enum StashItemRepositoryError {
     /// Error related to Quantity
     QuantityError(QuantityError),
     /// Error related to the implementation of the repository
-    PersisteneError(String),
+    PersistenceError(String),
 }
 
 impl std::fmt::Display for StashItemRepositoryError {
@@ -19,7 +19,7 @@ impl std::fmt::Display for StashItemRepositoryError {
             StashItemRepositoryError::IdError(error) => error.fmt(f),
             StashItemRepositoryError::ProductIdError(error) => error.fmt(f),
             StashItemRepositoryError::QuantityError(error) => error.fmt(f),
-            StashItemRepositoryError::PersisteneError(error) => write!(f, "{}", error),
+            StashItemRepositoryError::PersistenceError(error) => write!(f, "{}", error),
         }
     }
 }
