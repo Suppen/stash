@@ -37,7 +37,7 @@ impl DeleteProductById for ProductService {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use mockall::predicate::eq;
 
     use crate::domain::repositories::MockProductRepository;

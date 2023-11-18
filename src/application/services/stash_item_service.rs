@@ -72,7 +72,7 @@ impl SaveStashItem for StashItemService {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use crate::domain::{repositories::MockStashItemRepository, value_objects::Quantity};
 
     use super::*;

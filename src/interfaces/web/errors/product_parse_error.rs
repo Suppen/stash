@@ -31,7 +31,7 @@ impl From<BrandError> for ProductParseError {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
     use crate::{
         domain::{
