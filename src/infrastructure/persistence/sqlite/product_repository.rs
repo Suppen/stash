@@ -87,7 +87,9 @@ impl ProductRepositoryTrait<ProductRepositoryError> for ProductRepository {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{domain::value_objects::ProductId, infrastructure::sqlite::db::setup_db};
+    use crate::{
+        domain::value_objects::ProductId, infrastructure::persistence::sqlite::db::setup_db,
+    };
 
     fn get_repo() -> ProductRepository {
         // Create an in-memory database

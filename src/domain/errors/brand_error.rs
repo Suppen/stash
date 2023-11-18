@@ -2,7 +2,7 @@
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum BrandError {
     /// The brand name is empty
-    EmptyError,
+    EmptyStringError,
 }
 
 impl std::fmt::Display for BrandError {

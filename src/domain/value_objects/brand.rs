@@ -18,7 +18,7 @@ impl Brand {
     /// `Err(BrandError::EmptyError)` if the value is empty
     pub fn new(value: String) -> Result<Self, BrandError> {
         if value.is_empty() {
-            Err(BrandError::EmptyError)
+            Err(BrandError::EmptyStringError)
         } else {
             Ok(Self(value))
         }
@@ -70,7 +70,7 @@ mod tests {
     fn test_new_empty() {
         let brand = "".parse::<Brand>();
 
-        assert!(matches!(brand, Err(BrandError::EmptyError)));
+        assert!(matches!(brand, Err(BrandError::EmptyStringError)));
     }
 
     #[test]

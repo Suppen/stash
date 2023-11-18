@@ -9,7 +9,7 @@ pub struct ProductId(String);
 impl ProductId {
     pub fn new(value: String) -> Result<Self, ProductIdError> {
         if value.len() == 0 {
-            Err(ProductIdError::Empty)
+            Err(ProductIdError::EmptyStringError)
         } else {
             Ok(ProductId(value))
         }
@@ -58,7 +58,7 @@ mod tests {
     fn test_new_empty() {
         let product_id = "".parse::<ProductId>();
 
-        assert!(matches!(product_id, Err(ProductIdError::Empty)));
+        assert!(matches!(product_id, Err(ProductIdError::EmptyStringError)));
     }
 
     #[test]

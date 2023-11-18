@@ -155,7 +155,7 @@ impl StashItemRepositoryTrait<StashItemRepositoryError> for StashItemRepository 
 mod tests {
     use crate::{
         domain::{entities::Product, repositories::ProductRepository as ProductRepositoryTrait},
-        infrastructure::sqlite::{db::setup_db, ProductRepository},
+        infrastructure::persistence::sqlite::{db::setup_db, ProductRepository},
     };
 
     use super::*;

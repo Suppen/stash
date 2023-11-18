@@ -14,7 +14,7 @@ impl Quantity {
     /// - `QuantityError::Zero` - The value is zero
     pub fn new(value: u64) -> Result<Self, QuantityError> {
         if value == 0 {
-            Err(QuantityError::Zero)
+            Err(QuantityError::ZeroError)
         } else {
             Ok(Self(value))
         }
@@ -39,6 +39,6 @@ mod tests {
 
     #[test]
     fn test_new_quantity_zero() {
-        assert_eq!(Quantity::new(0), Err(QuantityError::Zero));
+        assert_eq!(Quantity::new(0), Err(QuantityError::ZeroError));
     }
 }
