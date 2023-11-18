@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use chrono::NaiveDate;
 use uuid::Uuid;
@@ -12,11 +12,11 @@ use crate::{
 };
 
 pub struct StashItemService<E: std::error::Error> {
-    pub stash_item_repository: Arc<Mutex<Box<dyn StashItemRepository<E>>>>,
+    pub stash_item_repository: Arc<Box<dyn StashItemRepository<E>>>,
 }
 
 impl<E: std::error::Error + Send + Sync> StashItemService<E> {
-    pub fn new(stash_item_repository: Arc<Mutex<Box<dyn StashItemRepository<E>>>>) -> Self {
+    pub fn new(stash_item_repository: Arc<Box<dyn StashItemRepository<E>>>) -> Self {
         Self {
             stash_item_repository,
         }
@@ -28,8 +28,7 @@ impl<E: std::error::Error + Send + Sync> GetStashItemById<E> for StashItemServic
         &self,
         id: &Uuid,
     ) -> Result<Option<crate::domain::stash_item::StashItem>, E> {
-        let sir = self.stash_item_repository.lock().unwrap();
-        sir.find_by_id(id)
+        self.stash_item_repository.find_by_id(id)
     }
 }
 
@@ -38,8 +37,8 @@ impl<E: std::error::Error + Send + Sync> GetStashItemsByProductId<E> for StashIt
         &self,
         product_id: &crate::domain::product::ProductId,
     ) -> Result<Vec<crate::domain::stash_item::StashItem>, E> {
-        let sir = self.stash_item_repository.lock().unwrap();
-        sir.find_all_by_product_id(product_id)
+        self.stash_item_repository
+            .find_all_by_product_id(product_id)
     }
 }
 
@@ -51,8 +50,8 @@ impl<E: std::error::Error + Send + Sync> GetStashItemByProductIdAndExpiryDate<E>
         product_id: &crate::domain::product::ProductId,
         expiry_date: &NaiveDate,
     ) -> Result<Option<crate::domain::stash_item::StashItem>, E> {
-        let sir = self.stash_item_repository.lock().unwrap();
-        sir.find_by_product_id_and_expiry_date(product_id, expiry_date)
+        self.stash_item_repository
+            .find_by_product_id_and_expiry_date(product_id, expiry_date)
     }
 }
 
@@ -61,15 +60,13 @@ impl<E: std::error::Error + Send + Sync> GetStashItemsExpiringBefore<E> for Stas
         &self,
         date: &NaiveDate,
     ) -> Result<Vec<crate::domain::stash_item::StashItem>, E> {
-        let sir = self.stash_item_repository.lock().unwrap();
-        sir.find_all_expiring_before(date)
+        self.stash_item_repository.find_all_expiring_before(date)
     }
 }
 
 impl<E: std::error::Error + Send + Sync> SaveStashItem<E> for StashItemService<E> {
     fn save_stash_item(&self, stash_item: crate::domain::stash_item::StashItem) -> Result<(), E> {
-        let sir = self.stash_item_repository.lock().unwrap();
-        sir.save(stash_item)
+        self.stash_item_repository.save(stash_item)
     }
 }
 
@@ -107,7 +104,7 @@ mod test {
             .expect_find_by_id()
             .with(eq(stash_item.id().clone()))
             .returning(move |_| Ok(Some(returned_stash_item.clone())));
-        let service = StashItemService::new(Arc::new(Mutex::new(Box::new(stash_item_repository))));
+        let service = StashItemService::new(Arc::new(Box::new(stash_item_repository)));
         let result = service.get_stash_item_by_id(&stash_item.id());
 
         assert!(result.is_ok());
@@ -121,7 +118,7 @@ mod test {
         stash_item_repository
             .expect_find_by_id()
             .returning(move |_| Ok(None));
-        let service = StashItemService::new(Arc::new(Mutex::new(Box::new(stash_item_repository))));
+        let service = StashItemService::new(Arc::new(Box::new(stash_item_repository)));
         let result = service.get_stash_item_by_id(&Uuid::new_v4()).unwrap();
 
         assert_eq!(result, None);
@@ -142,7 +139,7 @@ mod test {
             .expect_find_all_by_product_id()
             .with(eq(stash_item.product_id().clone()))
             .returning(move |_| Ok(vec![returned_stash_item.clone()]));
-        let service = StashItemService::new(Arc::new(Mutex::new(Box::new(stash_item_repository))));
+        let service = StashItemService::new(Arc::new(Box::new(stash_item_repository)));
         let result = service.get_stash_items_by_product_id(stash_item.product_id());
 
         assert!(result.is_ok());
@@ -167,7 +164,7 @@ mod test {
                 eq(stash_item.expiry_date().clone()),
             )
             .returning(move |_, _| Ok(Some(returned_stash_item.clone())));
-        let service = StashItemService::new(Arc::new(Mutex::new(Box::new(stash_item_repository))));
+        let service = StashItemService::new(Arc::new(Box::new(stash_item_repository)));
         let result = service.get_stash_item_by_product_id_and_expiry_date(
             stash_item.product_id(),
             stash_item.expiry_date(),
@@ -184,7 +181,7 @@ mod test {
         stash_item_repository
             .expect_find_by_product_id_and_expiry_date()
             .returning(move |_, _| Ok(None));
-        let service = StashItemService::new(Arc::new(Mutex::new(Box::new(stash_item_repository))));
+        let service = StashItemService::new(Arc::new(Box::new(stash_item_repository)));
         let result = service
             .get_stash_item_by_product_id_and_expiry_date(
                 &"ID".parse().unwrap(),
@@ -213,7 +210,7 @@ mod test {
             .expect_find_all_expiring_before()
             .with(eq(date_2.clone()))
             .returning(move |_| Ok(vec![returned_stash_item.clone()]));
-        let service = StashItemService::new(Arc::new(Mutex::new(Box::new(stash_item_repository))));
+        let service = StashItemService::new(Arc::new(Box::new(stash_item_repository)));
         let result = service.get_stash_items_expiring_before(&date_2).unwrap();
 
         assert_eq!(result, vec![stash_item]);
@@ -233,7 +230,7 @@ mod test {
             .expect_save()
             .with(eq(stash_item.clone()))
             .returning(|_| Ok(()));
-        let service = StashItemService::new(Arc::new(Mutex::new(Box::new(stash_item_repository))));
+        let service = StashItemService::new(Arc::new(Box::new(stash_item_repository)));
         let result = service.save_stash_item(stash_item);
 
         assert!(result.is_ok());

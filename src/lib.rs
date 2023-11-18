@@ -28,8 +28,8 @@ pub fn get_services() -> Result<
         infrastructure::sqlite::StashItemRepository::new(shared_connection.clone()),
     );
 
-    let shared_product_repository = Arc::new(Mutex::new(product_repository));
-    let shared_stash_item_repository = Arc::new(Mutex::new(stash_item_repository));
+    let shared_product_repository = Arc::new(product_repository);
+    let shared_stash_item_repository = Arc::new(stash_item_repository);
 
     let product_service =
         application::services::ProductService::new(shared_product_repository.clone());
