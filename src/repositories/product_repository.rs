@@ -1,7 +1,7 @@
 use crate::domain::product::{Product, ProductId};
 
 #[cfg_attr(test, mockall::automock)]
-pub trait ProductRepository<E: std::error::Error> {
+pub trait ProductRepository<E: std::error::Error + Send + Sync>: Send + Sync {
     /// Returns one product by id
     ///
     /// # Parameters

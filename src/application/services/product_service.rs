@@ -10,27 +10,27 @@ pub struct ProductService<E: std::error::Error> {
     product_repository: Arc<Mutex<Box<dyn ProductRepository<E>>>>,
 }
 
-impl<E: std::error::Error> ProductService<E> {
+impl<E: std::error::Error + Send + Sync> ProductService<E> {
     pub fn new(product_repository: Arc<Mutex<Box<dyn ProductRepository<E>>>>) -> Self {
         Self { product_repository }
     }
 }
 
-impl<E: std::error::Error> GetProductById<E> for ProductService<E> {
+impl<E: std::error::Error + Send + Sync> GetProductById<E> for ProductService<E> {
     fn get_product_by_id(&self, id: &ProductId) -> Result<Option<Product>, E> {
         let pr = self.product_repository.lock().unwrap();
         pr.find_by_id(id)
     }
 }
 
-impl<E: std::error::Error> SaveProduct<E> for ProductService<E> {
+impl<E: std::error::Error + Send + Sync> SaveProduct<E> for ProductService<E> {
     fn save_product(&self, product: Product) -> Result<(), E> {
         let pr = self.product_repository.lock().unwrap();
         pr.save(product)
     }
 }
 
-impl<E: std::error::Error> DeleteProductById<E> for ProductService<E> {
+impl<E: std::error::Error + Send + Sync> DeleteProductById<E> for ProductService<E> {
     fn delete_product_by_id(&self, id: &ProductId) -> Result<(), E> {
         let pr = self.product_repository.lock().unwrap();
         pr.delete_by_id(id)

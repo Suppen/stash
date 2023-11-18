@@ -4,7 +4,7 @@ use uuid::Uuid;
 use crate::domain::{product::ProductId, stash_item::StashItem};
 
 #[cfg_attr(test, mockall::automock)]
-pub trait StashItemRepository<E: std::error::Error> {
+pub trait StashItemRepository<E: std::error::Error + Send + Sync> {
     /// Returns one stash item by id
     ///
     /// # Parameters

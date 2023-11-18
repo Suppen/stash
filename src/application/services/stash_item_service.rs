@@ -15,7 +15,7 @@ pub struct StashItemService<E: std::error::Error> {
     pub stash_item_repository: Arc<Mutex<Box<dyn StashItemRepository<E>>>>,
 }
 
-impl<E: std::error::Error> StashItemService<E> {
+impl<E: std::error::Error + Send + Sync> StashItemService<E> {
     pub fn new(stash_item_repository: Arc<Mutex<Box<dyn StashItemRepository<E>>>>) -> Self {
         Self {
             stash_item_repository,
@@ -23,7 +23,7 @@ impl<E: std::error::Error> StashItemService<E> {
     }
 }
 
-impl<E: std::error::Error> GetStashItemById<E> for StashItemService<E> {
+impl<E: std::error::Error + Send + Sync> GetStashItemById<E> for StashItemService<E> {
     fn get_stash_item_by_id(
         &self,
         id: &Uuid,
@@ -33,7 +33,7 @@ impl<E: std::error::Error> GetStashItemById<E> for StashItemService<E> {
     }
 }
 
-impl<E: std::error::Error> GetStashItemsByProductId<E> for StashItemService<E> {
+impl<E: std::error::Error + Send + Sync> GetStashItemsByProductId<E> for StashItemService<E> {
     fn get_stash_items_by_product_id(
         &self,
         product_id: &crate::domain::product::ProductId,
@@ -43,7 +43,9 @@ impl<E: std::error::Error> GetStashItemsByProductId<E> for StashItemService<E> {
     }
 }
 
-impl<E: std::error::Error> GetStashItemByProductIdAndExpiryDate<E> for StashItemService<E> {
+impl<E: std::error::Error + Send + Sync> GetStashItemByProductIdAndExpiryDate<E>
+    for StashItemService<E>
+{
     fn get_stash_item_by_product_id_and_expiry_date(
         &self,
         product_id: &crate::domain::product::ProductId,
@@ -54,7 +56,7 @@ impl<E: std::error::Error> GetStashItemByProductIdAndExpiryDate<E> for StashItem
     }
 }
 
-impl<E: std::error::Error> GetStashItemsExpiringBefore<E> for StashItemService<E> {
+impl<E: std::error::Error + Send + Sync> GetStashItemsExpiringBefore<E> for StashItemService<E> {
     fn get_stash_items_expiring_before(
         &self,
         date: &NaiveDate,
@@ -64,7 +66,7 @@ impl<E: std::error::Error> GetStashItemsExpiringBefore<E> for StashItemService<E
     }
 }
 
-impl<E: std::error::Error> SaveStashItem<E> for StashItemService<E> {
+impl<E: std::error::Error + Send + Sync> SaveStashItem<E> for StashItemService<E> {
     fn save_stash_item(&self, stash_item: crate::domain::stash_item::StashItem) -> Result<(), E> {
         let sir = self.stash_item_repository.lock().unwrap();
         sir.save(stash_item)

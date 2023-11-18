@@ -9,23 +9,18 @@ use super::product_repository_error::ProductRepositoryError;
 
 /// A repository for [`Product`]s using SQLite as the underlying storage.
 pub struct ProductRepository {
-    /// The connection to the database. This is wrapped in an [`Arc`] and a [`Mutex`] to allow multiple repos to use the
-    /// same connection
+    /// Connection to the database
     connection: Arc<Mutex<Connection>>,
 }
 
 impl ProductRepository {
-    /// Creates a new [`ProductRepository`]. Creates the table in the database if it doesn't exist
-    ///
-    /// # Errors
-    ///
-    /// This function will return an error if the table creation fails.
+    /// Creates a new [`ProductRepository`]
     pub fn new(connection: Arc<Mutex<Connection>>) -> Self {
         Self { connection }
     }
 
     /// Shortcut to get the connection to the database
-    fn conn(&self) -> std::sync::MutexGuard<Connection> {
+    fn conn(&self) -> std::sync::MutexGuard<'_, Connection> {
         self.connection.lock().unwrap()
     }
 
@@ -61,7 +56,8 @@ impl ProductRepositoryTrait<ProductRepositoryError> for ProductRepository {
     }
 
     fn save(&self, product: Product) -> Result<(), ProductRepositoryError> {
-        self.conn().execute(
+        let conn = self.conn();
+        conn.execute(
             "INSERT INTO products (id, brand, name, created_at) VALUES (:id, :brand, :name, :now) ON CONFLICT(id) DO UPDATE SET brand = :brand, name = :name, updated_at = :now",
             named_params! {
                 ":id": product.id(),
@@ -75,7 +71,8 @@ impl ProductRepositoryTrait<ProductRepositoryError> for ProductRepository {
     }
 
     fn delete_by_id(&self, id: &ProductId) -> Result<(), ProductRepositoryError> {
-        self.conn().execute(
+        let conn = self.conn();
+        conn.execute(
             "DELETE FROM products WHERE id = :id",
             named_params! { ":id": id.value() },
         )?;
@@ -90,7 +87,10 @@ mod tests {
     use crate::{domain::product::ProductId, infrastructure::sqlite::db::setup_db};
 
     fn get_repo() -> ProductRepository {
+        // Create an in-memory database
         let connection = Connection::open_in_memory().unwrap();
+
+        // Create the tables in the database
         setup_db(&connection).unwrap();
 
         ProductRepository::new(Arc::new(Mutex::new(connection)))

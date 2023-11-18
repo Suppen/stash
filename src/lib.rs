@@ -1,9 +1,8 @@
 use std::sync::{Arc, Mutex};
 
 use application::services::{ProductService, StashItemService};
-use infrastructure::sqlite::{ProductRepositoryError, StashItemRepositoryError};
+use infrastructure::sqlite::{db::setup_db, ProductRepositoryError, StashItemRepositoryError};
 use repositories::{ProductRepository, StashItemRepository};
-use rusqlite::Connection;
 
 pub mod application;
 pub mod domain;
@@ -17,8 +16,8 @@ pub fn get_services() -> Result<
     ),
     String,
 > {
-    let connection = Connection::open_in_memory().unwrap();
-    infrastructure::sqlite::db::setup_db(&connection).unwrap();
+    let connection = rusqlite::Connection::open_in_memory().map_err(|e| e.to_string())?;
+    setup_db(&connection).map_err(|e| e.to_string())?;
 
     let shared_connection = Arc::new(Mutex::new(connection));
 

@@ -1,6 +1,7 @@
+use std::sync::{Arc, Mutex};
+
 use chrono::NaiveDate;
 use rusqlite::{named_params, Connection};
-use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 
 use crate::domain::product::ProductId;
@@ -12,23 +13,17 @@ use super::StashItemRepositoryError;
 
 /// A repository for [`StashItem`]s.
 pub struct StashItemRepository {
-    /// The connection to the database. This is wrapped in an [`Arc`] and a [`Mutex`] to allow multiple repos to use the
-    /// same connection
     connection: Arc<Mutex<Connection>>,
 }
 
 impl StashItemRepository {
-    /// Creates a new [`StashItemRepository`]. Creates the table in the database if it doesn't exist
-    ///
-    /// # Errors
-    ///
-    /// This function will return an error if the table creation fails.
+    /// Creates a new [`StashItemRepository`]
     pub fn new(connection: Arc<Mutex<Connection>>) -> Self {
         Self { connection }
     }
 
     /// Shortcut to get the connection to the database
-    fn conn(&self) -> std::sync::MutexGuard<Connection> {
+    fn conn(&self) -> std::sync::MutexGuard<'_, Connection> {
         self.connection.lock().unwrap()
     }
 
@@ -128,7 +123,8 @@ impl StashItemRepositoryTrait<StashItemRepositoryError> for StashItemRepository 
     }
 
     fn save(&self, stash_item: StashItem) -> Result<(), StashItemRepositoryError> {
-        self.conn().execute(
+        let conn = self.conn();
+        conn.execute(
             "INSERT INTO stash_items (id, product_id, quantity, expiry_date, created_at) VALUES (:id, :product_id, :quantity, :expiry_date, :now)
             ON CONFLICT(id) DO UPDATE SET product_id = :product_id, quantity = :quantity, expiry_date = :expiry_date, updated_at = :now",
             named_params! {
@@ -144,7 +140,8 @@ impl StashItemRepositoryTrait<StashItemRepositoryError> for StashItemRepository 
     }
 
     fn delete(&self, id: &Uuid) -> Result<(), StashItemRepositoryError> {
-        self.conn().execute(
+        let conn = self.conn();
+        conn.execute(
             "DELETE FROM stash_items WHERE id = :id",
             named_params! { ":id": id.to_string() },
         )?;
@@ -165,11 +162,13 @@ mod tests {
     use chrono::NaiveDate;
 
     fn get_repo() -> StashItemRepository {
-        // Create the database the repo(s) will use
+        // Create an in-memory database
         let connection = Connection::open_in_memory().unwrap();
+
+        // Initialize the database
         setup_db(&connection).unwrap();
 
-        // Wrap the connection in an Arc and a Mutex so it can be shared between repos
+        // Share the connection between the repos
         let shared_connection = Arc::new(Mutex::new(connection));
 
         // Create the repos
