@@ -1,4 +1,4 @@
-use std::{fmt::Display, ops::Deref, str::FromStr};
+use std::{ops::Deref, str::FromStr};
 
 use crate::domain::errors::BrandError;
 
@@ -41,7 +41,7 @@ impl Deref for Brand {
     }
 }
 
-impl Display for Brand {
+impl std::fmt::Display for Brand {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.value())
     }
