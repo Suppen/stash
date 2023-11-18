@@ -15,7 +15,7 @@ pub async fn delete_product_by_id(
     };
 
     match product_service.delete_product_by_id(&product_id) {
-        Ok(()) => HttpResponse::Ok().body("Product deleted"),
+        Ok(()) => HttpResponse::NoContent().finish(),
         Err(err) => {
             println!("Error: {}", err);
             HttpResponse::InternalServerError().body("Internal server error")
