@@ -1,0 +1,29 @@
+use actix_web::{web, HttpResponse};
+
+use crate::{
+    application::{services::ProductService, usecases::GetProductById},
+    domain::value_objects::ProductId,
+    interfaces::web::dtos::ProductDTO,
+};
+
+pub async fn get_product_by_id(
+    product_service: web::Data<ProductService>,
+    path: web::Path<String>,
+) -> HttpResponse {
+    let product_id = match path.parse::<ProductId>() {
+        Ok(product_id) => product_id,
+        Err(err) => return HttpResponse::BadRequest().body(format!("Invalid product id: {}", err)),
+    };
+
+    match product_service.get_product_by_id(&product_id) {
+        Ok(None) => HttpResponse::NotFound().body("Product not found"),
+        Ok(Some(product)) => {
+            let product_dto = ProductDTO::from(product);
+            HttpResponse::Ok().json(product_dto)
+        }
+        Err(err) => {
+            println!("Error: {}", err);
+            HttpResponse::InternalServerError().body("Internal server error")
+        }
+    }
+}

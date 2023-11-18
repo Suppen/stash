@@ -1114,6 +1114,8 @@ dependencies = [
  "getset",
  "mockall",
  "rusqlite",
+ "serde",
+ "serde_json",
  "uuid",
 ]
 

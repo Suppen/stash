@@ -1,0 +1,26 @@
+use actix_web::{web, HttpResponse};
+
+use crate::{
+    application::{services::ProductService, usecases::SaveProduct},
+    domain::entities::Product,
+    interfaces::web::dtos::ProductDTO,
+};
+
+pub async fn save_product(
+    product_service: web::Data<ProductService>,
+    body: web::Json<ProductDTO>,
+) -> HttpResponse {
+    let product = Product::new(
+        body.id.parse().unwrap(),
+        body.brand.parse().unwrap(),
+        body.name.as_str(),
+    );
+
+    match product_service.save_product(product) {
+        Ok(()) => HttpResponse::Ok().body("Product saved"),
+        Err(err) => {
+            println!("Error: {}", err);
+            HttpResponse::InternalServerError().body("Internal server error")
+        }
+    }
+}
