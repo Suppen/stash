@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::domain::entities::Product;
+use crate::{domain::entities::Product, interfaces::web::errors::ProductParseError};
 
 /// DTO for a domain Product entity
 #[derive(Debug, Serialize, Deserialize)]
@@ -20,12 +20,14 @@ impl From<Product> for ProductDTO {
     }
 }
 
-impl From<ProductDTO> for Product {
-    fn from(product_dto: ProductDTO) -> Self {
-        Self::new(
-            product_dto.id.parse().unwrap(),
-            product_dto.brand.parse().unwrap(),
-            product_dto.name.as_str(),
-        )
+impl TryFrom<ProductDTO> for Product {
+    type Error = ProductParseError;
+
+    fn try_from(dto: ProductDTO) -> Result<Self, Self::Error> {
+        Ok(Self::new(
+            dto.id.parse()?,
+            dto.brand.parse()?,
+            dto.name.as_str(),
+        ))
     }
 }
