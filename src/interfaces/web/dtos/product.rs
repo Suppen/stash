@@ -1,6 +1,11 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{domain::entities::Product, interfaces::web::errors::ProductParseError};
+use crate::{
+    domain::entities::{Product, StashItem},
+    interfaces::web::errors::ProductParseError,
+};
+
+use super::StashItemDTO;
 
 /// DTO for a domain Product entity
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -8,6 +13,7 @@ pub struct ProductDTO {
     pub id: String,
     pub brand: String,
     pub name: String,
+    pub stash_items: Vec<StashItemDTO>,
 }
 
 impl From<Product> for ProductDTO {
@@ -16,6 +22,11 @@ impl From<Product> for ProductDTO {
             id: product.id().to_string(),
             brand: product.brand().to_string(),
             name: product.name().to_string(),
+            stash_items: product
+                .stash_items()
+                .into_iter()
+                .map(|item| StashItemDTO::from(item.clone()))
+                .collect(),
         }
     }
 }
@@ -28,12 +39,18 @@ impl TryFrom<ProductDTO> for Product {
             dto.id.parse()?,
             dto.brand.parse()?,
             dto.name.as_str(),
+            dto.stash_items
+                .into_iter()
+                .map(|item| StashItem::try_from(item))
+                .collect::<Result<Vec<_>, _>>()?,
         ))
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use uuid::Uuid;
+
     use super::*;
 
     #[test]
@@ -42,12 +59,35 @@ mod tests {
             id: "1".to_string(),
             brand: "brand".to_string(),
             name: "name".to_string(),
+            stash_items: vec![
+                StashItemDTO {
+                    id: Uuid::new_v4().to_string(),
+                    quantity: 3,
+                    expiry_date: "2021-01-01".to_string(),
+                },
+                StashItemDTO {
+                    id: Uuid::new_v4().to_string(),
+                    quantity: 5,
+                    expiry_date: "2021-01-01".to_string(),
+                },
+            ],
         };
 
         let product = Product::new(
             expected_dto.id.parse().unwrap(),
             expected_dto.brand.parse().unwrap(),
             expected_dto.name.as_str(),
+            expected_dto
+                .stash_items
+                .iter()
+                .map(|item| {
+                    StashItem::new(
+                        item.id.parse().unwrap(),
+                        item.quantity.try_into().unwrap(),
+                        item.expiry_date.parse().unwrap(),
+                    )
+                })
+                .collect(),
         );
 
         let dto = ProductDTO::from(product);
@@ -57,7 +97,23 @@ mod tests {
 
     #[test]
     fn test_product_try_from_dto() {
-        let expected_product = Product::new("1".parse().unwrap(), "brand".parse().unwrap(), "name");
+        let expected_product = Product::new(
+            "1".parse().unwrap(),
+            "brand".parse().unwrap(),
+            "name",
+            vec![
+                StashItem::new(
+                    Uuid::new_v4(),
+                    3.try_into().unwrap(),
+                    "2021-01-01".parse().unwrap(),
+                ),
+                StashItem::new(
+                    Uuid::new_v4(),
+                    5.try_into().unwrap(),
+                    "2021-01-01".parse().unwrap(),
+                ),
+            ],
+        );
 
         let dto = ProductDTO::from(expected_product.clone());
 
@@ -72,6 +128,7 @@ mod tests {
             id: "".to_string(),
             brand: "brand".to_string(),
             name: "name".to_string(),
+            stash_items: vec![],
         };
 
         let product = Product::try_from(dto);
@@ -85,6 +142,7 @@ mod tests {
             id: "1".to_string(),
             brand: "".to_string(),
             name: "name".to_string(),
+            stash_items: vec![],
         };
 
         let product = Product::try_from(dto);

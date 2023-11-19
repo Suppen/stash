@@ -2,7 +2,7 @@ use chrono::NaiveDate;
 use getset::{Getters, Setters};
 use uuid::Uuid;
 
-use crate::domain::value_objects::{ProductId, Quantity};
+use crate::domain::value_objects::Quantity;
 
 use super::Entity;
 
@@ -12,10 +12,6 @@ pub struct StashItem {
     /// ID of the stash item
     #[getset(get = "pub")]
     id: Uuid,
-
-    /// ID of the product this is an instance of
-    #[getset(get = "pub", set = "pub")]
-    product_id: ProductId,
 
     /// Quantity of the product in this stash item
     #[getset(get = "pub", set = "pub")]
@@ -27,15 +23,9 @@ pub struct StashItem {
 }
 
 impl StashItem {
-    pub fn new(
-        id: Uuid,
-        product_id: ProductId,
-        quantity: Quantity,
-        expiry_date: NaiveDate,
-    ) -> Self {
+    pub fn new(id: Uuid, quantity: Quantity, expiry_date: NaiveDate) -> Self {
         Self {
             id,
-            product_id,
             quantity,
             expiry_date,
         }
@@ -59,7 +49,6 @@ mod tests {
 
         let item = StashItem::new(
             id.clone(),
-            "ID".parse().unwrap(),
             Quantity::new(1).unwrap(),
             NaiveDate::from_ymd_opt(2023, 10, 28).unwrap(),
         );
@@ -68,26 +57,11 @@ mod tests {
     }
 
     #[test]
-    fn test_product_id() {
-        let product_id: ProductId = "ID".parse().unwrap();
-
-        let item = StashItem::new(
-            Uuid::new_v4(),
-            product_id.clone(),
-            Quantity::new(1).unwrap(),
-            NaiveDate::from_ymd_opt(2023, 10, 28).unwrap(),
-        );
-
-        assert_eq!(item.product_id(), &product_id);
-    }
-
-    #[test]
     fn test_quantity() {
         let quantity = Quantity::new(5).unwrap();
 
         let item = StashItem::new(
             Uuid::new_v4(),
-            "ID".parse().unwrap(),
             quantity,
             NaiveDate::from_ymd_opt(2023, 10, 28).unwrap(),
         );
@@ -99,12 +73,7 @@ mod tests {
     fn test_expiry_date() {
         let expires = NaiveDate::from_ymd_opt(2023, 10, 28).unwrap();
 
-        let item = StashItem::new(
-            Uuid::new_v4(),
-            "ID".parse().unwrap(),
-            Quantity::new(1).unwrap(),
-            expires,
-        );
+        let item = StashItem::new(Uuid::new_v4(), Quantity::new(1).unwrap(), expires);
 
         assert_eq!(item.expiry_date(), &expires);
     }

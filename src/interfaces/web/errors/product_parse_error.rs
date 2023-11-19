@@ -1,5 +1,7 @@
 use crate::domain::errors::{BrandError, ProductIdError};
 
+use super::StashItemParseError;
+
 /// Errors that can occur when parsing a Product from a ProuctDTO
 #[derive(Debug, PartialEq, Eq)]
 pub enum ProductParseError {
@@ -7,6 +9,8 @@ pub enum ProductParseError {
     ProductIdError(ProductIdError),
     /// Parsing the brand failed
     BrandError(BrandError),
+    /// Parsing stash items failed
+    StashItemParseError(StashItemParseError),
 }
 
 impl std::fmt::Display for ProductParseError {
@@ -14,6 +18,7 @@ impl std::fmt::Display for ProductParseError {
         match self {
             Self::ProductIdError(error) => error.fmt(f),
             Self::BrandError(error) => error.fmt(f),
+            Self::StashItemParseError(error) => error.fmt(f),
         }
     }
 }
@@ -29,5 +34,11 @@ impl From<ProductIdError> for ProductParseError {
 impl From<BrandError> for ProductParseError {
     fn from(error: BrandError) -> Self {
         Self::BrandError(error)
+    }
+}
+
+impl From<StashItemParseError> for ProductParseError {
+    fn from(error: StashItemParseError) -> Self {
+        Self::StashItemParseError(error)
     }
 }

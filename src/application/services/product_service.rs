@@ -47,7 +47,7 @@ mod tests {
     #[test]
     fn test_get_product_by_id() {
         let product_id: ProductId = "ID".parse().unwrap();
-        let product = Product::new(product_id.clone(), "BRAND".parse().unwrap(), "NAME");
+        let product = Product::new(product_id.clone(), "BRAND".parse().unwrap(), "NAME", vec![]);
         let returned_product = product.clone();
 
         let mut product_repository = MockProductRepository::new();
@@ -85,7 +85,12 @@ mod tests {
 
     #[test]
     fn test_save_product() {
-        let product = Product::new("ID".parse().unwrap(), "BRAND".parse().unwrap(), "NAME");
+        let product = Product::new(
+            "ID".parse().unwrap(),
+            "BRAND".parse().unwrap(),
+            "NAME",
+            vec![],
+        );
 
         let mut product_repository = MockProductRepository::new();
         product_repository
