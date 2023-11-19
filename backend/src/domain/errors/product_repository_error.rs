@@ -1,5 +1,6 @@
 use super::{
-    BrandError, DuplicateExpiryDateError, ProductIdError, QuantityError, StashItemExistsError,
+    BrandError, DuplicateExpiryDateError, ProductIdError, QuantityError, StashItemDoesntExistError,
+    StashItemExistsError,
 };
 
 /// Error type for ProductRepository
@@ -23,6 +24,8 @@ pub enum ProductRepositoryError {
     ProductNotFound,
     /// The stash item already exists
     StashItemExists,
+    /// The stash item does not exist
+    StashItemNotFound,
     /// Error related to the implementation of the repository
     PersisteneError(String),
 }
@@ -43,6 +46,7 @@ impl std::fmt::Display for ProductRepositoryError {
             ProductRepositoryError::ProductAlreadyExists => write!(f, "Product already exists"),
             ProductRepositoryError::ProductNotFound => write!(f, "Product not found"),
             ProductRepositoryError::StashItemExists => write!(f, "Stash item already exists"),
+            ProductRepositoryError::StashItemNotFound => write!(f, "Stash item not found"),
             ProductRepositoryError::PersisteneError(error) => write!(f, "{}", error),
         }
     }
@@ -89,5 +93,11 @@ impl From<DuplicateExpiryDateError> for ProductRepositoryError {
 impl From<StashItemExistsError> for ProductRepositoryError {
     fn from(_: StashItemExistsError) -> Self {
         Self::StashItemExists
+    }
+}
+
+impl From<StashItemDoesntExistError> for ProductRepositoryError {
+    fn from(_: StashItemDoesntExistError) -> Self {
+        Self::StashItemNotFound
     }
 }
