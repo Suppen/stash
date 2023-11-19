@@ -404,7 +404,7 @@ mod tests {
 
         repo.save(product.clone()).unwrap();
 
-        product.remove_stash_item_by_id(&stash_item_id).unwrap();
+        product.remove_stash_item(&stash_item_id).unwrap();
 
         repo.save(product.clone()).unwrap();
 
@@ -456,9 +456,7 @@ mod tests {
                 NaiveDate::from_ymd_opt(2021, 1, 4).unwrap(),
             ))
             .unwrap();
-        product
-            .remove_stash_item_by_id(&stash_item_to_remove)
-            .unwrap();
+        product.remove_stash_item(&stash_item_to_remove).unwrap();
 
         repo.save(product.clone()).unwrap();
 

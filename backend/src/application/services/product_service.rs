@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use crate::{
     application::use_cases::{
-        AddStashItem, CreateProduct, DeleteProductById, GetProductById, UpdateProductById,
-        UpdateStashItem,
+        AddStashItem, CreateProduct, DeleteProductById, DeleteStashItem, GetProductById,
+        UpdateProductById, UpdateStashItem,
     },
     domain::{
         entities::{Product, StashItem},
@@ -90,6 +90,25 @@ impl UpdateStashItem for ProductService {
         };
 
         product.update_stash_item(stash_item)?;
+
+        self.product_repository.save(product)?;
+
+        Ok(())
+    }
+}
+
+impl DeleteStashItem for ProductService {
+    fn delete_stash_item(
+        &self,
+        product_id: &ProductId,
+        stash_item_id: &uuid::Uuid,
+    ) -> Result<(), ProductRepositoryError> {
+        let mut product = match self.product_repository.find_by_id(product_id)? {
+            Some(product) => product,
+            None => return Err(ProductRepositoryError::ProductNotFound),
+        };
+
+        product.remove_stash_item(stash_item_id)?;
 
         self.product_repository.save(product)?;
 
@@ -240,6 +259,38 @@ mod tests {
         let product_service = ProductService::new(Arc::new(Box::new(product_repository)));
 
         let result = product_service.update_stash_item(&product_id, stash_item);
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_delete_stash_item() {
+        let stash_item_id = Uuid::new_v4();
+        let product_id: ProductId = "ID".parse().unwrap();
+        let product = Product::new(
+            product_id.clone(),
+            "BRAND".parse().unwrap(),
+            "NAME",
+            vec![StashItem::new(
+                stash_item_id,
+                1.try_into().unwrap(),
+                NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
+            )],
+        );
+
+        let mut product_repository = MockProductRepository::new();
+        product_repository
+            .expect_find_by_id()
+            .with(eq(product_id.clone()))
+            .returning(move |_| Ok(Some(product.clone())));
+        product_repository
+            .expect_save()
+            .withf(move |product| product.stash_items().len() == 0)
+            .returning(|_| Ok(()));
+
+        let product_service = ProductService::new(Arc::new(Box::new(product_repository)));
+
+        let result = product_service.delete_stash_item(&product_id, &stash_item_id);
 
         assert!(result.is_ok());
     }

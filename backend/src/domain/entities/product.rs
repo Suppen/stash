@@ -85,6 +85,8 @@ impl Product {
             return Err(StashItemExistsError);
         }
 
+        // TODO Check if a stash item with the same expiry date already exists
+
         self.stash_items.insert(stash_item.id().clone(), stash_item);
 
         Ok(())
@@ -120,24 +122,13 @@ impl Product {
         &mut self,
         stash_item: StashItem,
     ) -> Result<(), StashItemDoesntExistError> {
+        // TODO Check if a stash item with the same expiry date already exists
+
         self.remove_stash_item(stash_item.id())?;
         self.add_stash_item(stash_item)
             .expect("If it already exists now, the deletion didn't work");
 
         Ok(())
-    }
-
-    /// Removes a stash item from the product
-    ///
-    /// # Arguments
-    ///
-    /// * `stash_item` - Stash item to remove
-    ///
-    /// # Returns
-    ///
-    /// * The removed stash item, if one was removed
-    pub fn remove_stash_item_by_id(&mut self, stash_item_id: &Uuid) -> Option<StashItem> {
-        self.stash_items.remove(stash_item_id)
     }
 }
 
