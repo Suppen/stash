@@ -7,28 +7,32 @@ use super::handlers::{
 };
 
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::resource("/product").route(web::post().to(save_product)))
-        .service(
-            web::resource("/product/{product_id}")
-                .route(web::get().to(get_product_by_id))
-                .route(web::delete().to(delete_product_by_id)),
-        )
-        .service(web::resource("/stash_item").route(web::post().to(save_stash_item)))
-        .service(
-            web::resource("/stash_item/{stash_item_id}")
-                .route(web::get().to(get_stash_item_by_id))
-                .route(web::delete().to(delete_stash_item_by_id)),
-        )
-        .service(
-            web::resource("/stash_item/product/{product_id}/expiry_date/{expiry_date}")
-                .route(web::get().to(get_stash_item_by_product_id_and_expiry_date)),
-        )
-        .service(
-            web::resource("/stash_items/product/{product_id}")
-                .route(web::get().to(get_stash_items_by_product_id)),
-        )
-        .service(
-            web::resource("/stash_items/expiring_before/{date}")
-                .route(web::get().to(get_stash_items_expiring_before)),
-        );
+    cfg.service(
+        web::scope("/products")
+            .route("", web::post().to(save_product))
+            .route("/{product_id}", web::get().to(get_product_by_id))
+            .route("/{product_id}", web::delete().to(delete_product_by_id)),
+    );
+
+    cfg.service(
+        web::scope("/stash_items")
+            .route("", web::post().to(save_stash_item))
+            .route("/{stash_item_id}", web::get().to(get_stash_item_by_id))
+            .route(
+                "/{stash_item_id}",
+                web::delete().to(delete_stash_item_by_id),
+            )
+            .route(
+                "/product/{product_id}/expiry_date/{expiry_date}",
+                web::get().to(get_stash_item_by_product_id_and_expiry_date),
+            )
+            .route(
+                "/product/{product_id}",
+                web::get().to(get_stash_items_by_product_id),
+            )
+            .route(
+                "/expiring_before/{date}",
+                web::get().to(get_stash_items_expiring_before),
+            ),
+    );
 }
