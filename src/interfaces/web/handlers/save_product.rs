@@ -1,7 +1,7 @@
 use actix_web::{web, HttpResponse};
 
 use crate::{
-    application::{services::ProductService, usecases::SaveProduct},
+    application::{services::ProductService, use_cases::SaveProduct},
     domain::entities::Product,
     interfaces::web::dtos::ProductDTO,
 };

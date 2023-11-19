@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::{
-    application::usecases::{DeleteProductById, GetProductById, SaveProduct},
+    application::use_cases::{DeleteProductById, GetProductById, SaveProduct},
     domain::{
         entities::Product, errors::ProductRepositoryError, repositories::ProductRepository,
         value_objects::ProductId,

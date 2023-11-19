@@ -1,7 +1,7 @@
 use actix_web::{web, HttpResponse};
 
 use crate::{
-    application::{services::ProductService, usecases::DeleteProductById},
+    application::{services::ProductService, use_cases::DeleteProductById},
     domain::value_objects::ProductId,
 };
 
