@@ -5,8 +5,8 @@ use uuid::Uuid;
 
 use crate::{
     application::usecases::{
-        GetStashItemById, GetStashItemByProductIdAndExpiryDate, GetStashItemsByProductId,
-        GetStashItemsExpiringBefore, SaveStashItem,
+        DeleteStashItemById, GetStashItemById, GetStashItemByProductIdAndExpiryDate,
+        GetStashItemsByProductId, GetStashItemsExpiringBefore, SaveStashItem,
     },
     domain::{
         entities::StashItem, errors::StashItemRepositoryError, repositories::StashItemRepository,
@@ -68,6 +68,12 @@ impl GetStashItemsExpiringBefore for StashItemService {
 impl SaveStashItem for StashItemService {
     fn save_stash_item(&self, stash_item: StashItem) -> Result<(), StashItemRepositoryError> {
         self.stash_item_repository.save(stash_item)
+    }
+}
+
+impl DeleteStashItemById for StashItemService {
+    fn delete_stash_item_by_id(&self, id: &Uuid) -> Result<(), StashItemRepositoryError> {
+        self.stash_item_repository.delete(id)
     }
 }
 
@@ -223,6 +229,21 @@ mod tests {
             .returning(|_| Ok(()));
         let service = StashItemService::new(Arc::new(Box::new(stash_item_repository)));
         let result = service.save_stash_item(stash_item);
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_delete_stash_item_by_id() {
+        let mut stash_item_repository = MockStashItemRepository::new();
+        let id = Uuid::new_v4();
+
+        stash_item_repository
+            .expect_delete()
+            .with(eq(id.clone()))
+            .returning(|_| Ok(()));
+        let service = StashItemService::new(Arc::new(Box::new(stash_item_repository)));
+        let result = service.delete_stash_item_by_id(&id);
 
         assert!(result.is_ok());
     }
