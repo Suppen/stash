@@ -1,9 +1,9 @@
-use std::sync::Arc;
+use std::{collections::HashSet, sync::Arc};
 
 use crate::{
     application::use_cases::{
         AddStashItem, CreateProduct, DeleteProductById, DeleteStashItem, GetProductById,
-        UpdateProductById, UpdateStashItem,
+        GetStashItems, UpdateProductById, UpdateStashItem,
     },
     domain::{
         entities::{Product, StashItem},
@@ -113,6 +113,26 @@ impl DeleteStashItem for ProductService {
         self.product_repository.save(product)?;
 
         Ok(())
+    }
+}
+
+impl GetStashItems for ProductService {
+    fn get_stash_items(
+        &self,
+        product_id: &ProductId,
+    ) -> Result<HashSet<StashItem>, ProductRepositoryError> {
+        let product = match self.product_repository.find_by_id(product_id)? {
+            Some(product) => product,
+            None => return Err(ProductRepositoryError::ProductNotFound),
+        };
+
+        let stash_items = product
+            .stash_items()
+            .into_iter()
+            .map(|x| x.clone())
+            .collect();
+
+        Ok(stash_items)
     }
 }
 
@@ -293,5 +313,46 @@ mod tests {
         let result = product_service.delete_stash_item(&product_id, &stash_item_id);
 
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_get_stash_items() {
+        let product_id: ProductId = "ID".parse().unwrap();
+        let expected_stash_items = vec![
+            StashItem::new(
+                Uuid::new_v4(),
+                1.try_into().unwrap(),
+                NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
+            ),
+            StashItem::new(
+                Uuid::new_v4(),
+                2.try_into().unwrap(),
+                NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
+            ),
+        ];
+        let product = Product::new(
+            product_id.clone(),
+            "BRAND".parse().unwrap(),
+            "NAME",
+            expected_stash_items.clone(),
+        );
+
+        let mut product_repository = MockProductRepository::new();
+        product_repository
+            .expect_find_by_id()
+            .with(eq(product_id.clone()))
+            .returning(move |_| Ok(Some(product.clone())));
+
+        let product_service = ProductService::new(Arc::new(Box::new(product_repository)));
+
+        let result = product_service.get_stash_items(&product_id);
+
+        assert!(result.is_ok());
+
+        let stash_items = result.unwrap();
+
+        for stash_item in expected_stash_items {
+            assert!(stash_items.contains(&stash_item));
+        }
     }
 }
