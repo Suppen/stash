@@ -26,7 +26,7 @@ pub async fn update_product_by_id(
     }
 
     match product_service.update_product_by_id(&product_id, product) {
-        Ok(()) => HttpResponse::Ok().body("Product updated"),
+        Ok(()) => HttpResponse::NoContent().finish(),
         Err(ProductRepositoryError::ProductNotFound) => {
             HttpResponse::NotFound().body("Product not found")
         }

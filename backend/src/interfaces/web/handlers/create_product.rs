@@ -16,7 +16,7 @@ pub async fn create_product(
     };
 
     match product_service.create_product(product) {
-        Ok(()) => HttpResponse::Ok().body("Product created"),
+        Ok(()) => HttpResponse::NoContent().finish(),
         Err(ProductRepositoryError::ProductAlreadyExists) => {
             HttpResponse::Conflict().body("Product already exists")
         }
