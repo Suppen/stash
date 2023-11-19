@@ -124,7 +124,7 @@ impl StashItemRepositoryTrait for StashItemRepository {
 
     fn save(&self, stash_item: StashItem) -> Result<(), StashItemRepositoryError> {
         let conn = self.conn();
-        conn.execute(
+        let result = conn.execute(
             "INSERT INTO stash_items (id, product_id, quantity, expiry_date, created_at) VALUES (:id, :product_id, :quantity, :expiry_date, :now)
             ON CONFLICT(id) DO UPDATE SET product_id = :product_id, quantity = :quantity, expiry_date = :expiry_date, updated_at = :now",
             named_params! {
@@ -134,9 +134,24 @@ impl StashItemRepositoryTrait for StashItemRepository {
                 ":expiry_date": stash_item.expiry_date(),
                 ":now": chrono::Utc::now().naive_utc(),
             },
-        )?;
+        );
 
-        Ok(())
+        match result {
+            Ok(_) => Ok(()),
+            Err(rusqlite::Error::SqliteFailure(error, _)) => {
+                if error.code == rusqlite::ErrorCode::ConstraintViolation {
+                    // There is only one constraint
+                    Err(StashItemRepositoryError::ProductDoesNotExist)
+                } else {
+                    Err(StashItemRepositoryError::PersistenceError(
+                        error.to_string(),
+                    ))
+                }
+            }
+            Err(error) => Err(StashItemRepositoryError::PersistenceError(
+                error.to_string(),
+            )),
+        }
     }
 
     fn delete(&self, id: &Uuid) -> Result<(), StashItemRepositoryError> {
@@ -374,6 +389,10 @@ mod tests {
         let result = repo.save(stash_item);
 
         assert!(result.is_err());
+        assert!(matches!(
+            result.unwrap_err(),
+            StashItemRepositoryError::ProductDoesNotExist
+        ));
     }
 
     #[test]
