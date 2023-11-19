@@ -3,6 +3,7 @@ use std::sync::Arc;
 use crate::{
     application::use_cases::{
         CreateProduct, DeleteProductById, GetProductById, SaveProduct, SaveStashItem,
+        UpdateProductById,
     },
     domain::{
         entities::{Product, StashItem},
@@ -32,6 +33,20 @@ impl CreateProduct for ProductService {
     fn create_product(&self, product: Product) -> Result<(), ProductRepositoryError> {
         if self.product_repository.exists_by_id(&product.id())? {
             return Err(ProductRepositoryError::ProductAlreadyExists);
+        }
+
+        self.product_repository.save(product)
+    }
+}
+
+impl UpdateProductById for ProductService {
+    fn update_product_by_id(
+        &self,
+        id: &ProductId,
+        product: Product,
+    ) -> Result<(), ProductRepositoryError> {
+        if !self.product_repository.exists_by_id(id)? {
+            return Err(ProductRepositoryError::ProductNotFound);
         }
 
         self.product_repository.save(product)
