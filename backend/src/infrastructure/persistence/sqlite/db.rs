@@ -1,6 +1,6 @@
 use rusqlite::params;
 
-use crate::domain::errors::{ProductRepositoryError, StashItemRepositoryError};
+use crate::domain::errors::ProductRepositoryError;
 
 pub fn setup_db(connection: &rusqlite::Connection) -> Result<(), rusqlite::Error> {
     connection.execute(
@@ -34,11 +34,5 @@ pub fn setup_db(connection: &rusqlite::Connection) -> Result<(), rusqlite::Error
 impl From<rusqlite::Error> for ProductRepositoryError {
     fn from(error: rusqlite::Error) -> Self {
         Self::PersisteneError(error.to_string())
-    }
-}
-
-impl From<rusqlite::Error> for StashItemRepositoryError {
-    fn from(error: rusqlite::Error) -> Self {
-        Self::PersistenceError(error.to_string())
     }
 }

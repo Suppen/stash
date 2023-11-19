@@ -83,7 +83,7 @@ impl ProductRepository {
         let stash_items = ProductRepository::get_stash_items(connection, product.id())?;
 
         stash_items.into_iter().for_each(|stash_item| {
-            product.add_or_replace_stash_item(stash_item).expect(
+            product.add_stash_item(stash_item).expect(
                 format!("Duplicate expiry dates in DB for product {}", product.id()).as_str(),
             );
         });
@@ -364,7 +364,7 @@ mod tests {
         repo.save(product.clone()).unwrap();
 
         product
-            .add_or_replace_stash_item(StashItem::new(
+            .add_stash_item(StashItem::new(
                 Uuid::new_v4(),
                 2.try_into().unwrap(),
                 NaiveDate::from_ymd_opt(2021, 1, 2).unwrap(),
@@ -443,14 +443,14 @@ mod tests {
         product.set_name("NEW NAME".to_string());
         product.set_brand("NEW BRAND".parse().unwrap());
         product
-            .add_or_replace_stash_item(StashItem::new(
+            .add_stash_item(StashItem::new(
                 Uuid::new_v4(),
                 3.try_into().unwrap(),
                 NaiveDate::from_ymd_opt(2021, 1, 3).unwrap(),
             ))
             .unwrap();
         product
-            .add_or_replace_stash_item(StashItem::new(
+            .update_stash_item(StashItem::new(
                 stash_item_to_update,
                 4.try_into().unwrap(),
                 NaiveDate::from_ymd_opt(2021, 1, 4).unwrap(),

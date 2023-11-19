@@ -1,13 +1,9 @@
 use std::sync::Arc;
 
 use crate::{
-    application::use_cases::{
-        CreateProduct, DeleteProductById, GetProductById, SaveStashItem, UpdateProductById,
-    },
+    application::use_cases::{CreateProduct, DeleteProductById, GetProductById, UpdateProductById},
     domain::{
-        entities::{Product, StashItem},
-        errors::ProductRepositoryError,
-        repositories::ProductRepository,
+        entities::Product, errors::ProductRepositoryError, repositories::ProductRepository,
         value_objects::ProductId,
     },
 };
@@ -55,24 +51,6 @@ impl UpdateProductById for ProductService {
 impl DeleteProductById for ProductService {
     fn delete_product_by_id(&self, id: &ProductId) -> Result<(), ProductRepositoryError> {
         self.product_repository.delete_by_id(id)
-    }
-}
-
-impl SaveStashItem for ProductService {
-    fn save_stash_item(
-        &self,
-        product_id: &ProductId,
-        stash_item: StashItem,
-    ) -> Result<(), ProductRepositoryError> {
-        let mut product = match self.product_repository.find_by_id(product_id) {
-            Ok(Some(product)) => product,
-            Ok(None) => return Err(ProductRepositoryError::ProductNotFound),
-            Err(err) => return Err(err),
-        };
-
-        product.add_or_replace_stash_item(stash_item)?;
-
-        self.product_repository.save(product)
     }
 }
 
