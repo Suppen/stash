@@ -3,7 +3,10 @@ use std::collections::{HashMap, HashSet};
 use getset::{Getters, Setters};
 use uuid::Uuid;
 
-use crate::domain::value_objects::{Brand, ProductId};
+use crate::domain::{
+    errors::DuplicateExpiryDateError,
+    value_objects::{Brand, ProductId},
+};
 
 use super::{Entity, StashItem};
 
@@ -67,9 +70,23 @@ impl Product {
     /// # Returns
     ///
     /// * None if the item was added, Some(stash_item) if an item with the same ID was replaced
-    pub fn add_or_replace_stash_item(&mut self, stash_item: StashItem) -> Option<StashItem> {
-        // TODO Two stash items on a product cannot have the same expiry date
-        self.stash_items.insert(stash_item.id().clone(), stash_item)
+    pub fn add_or_replace_stash_item(
+        &mut self,
+        stash_item: StashItem,
+    ) -> Result<Option<StashItem>, DuplicateExpiryDateError> {
+        let exists = self.stash_items.contains_key(stash_item.id());
+
+        let collision = self
+            .stash_items
+            .values()
+            .any(|item| item.expiry_date() == stash_item.expiry_date());
+
+        if !exists && collision {
+            return Err(DuplicateExpiryDateError);
+        }
+
+        let old_item = self.stash_items.insert(stash_item.id().clone(), stash_item);
+        Ok(old_item)
     }
 
     /// Removes a stash item from the product
@@ -172,7 +189,9 @@ mod tests {
             NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
         );
 
-        let result = product.add_or_replace_stash_item(stash_item.clone());
+        let result = product
+            .add_or_replace_stash_item(stash_item.clone())
+            .unwrap();
 
         assert!(result.is_none());
         assert!(product.stash_items().contains(&&stash_item));
@@ -196,10 +215,12 @@ mod tests {
         let stash_item_2 = StashItem::new(
             Uuid::new_v4(),
             2.try_into().unwrap(),
-            NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(2021, 1, 2).unwrap(),
         );
 
-        let result = product.add_or_replace_stash_item(stash_item_2.clone());
+        let result = product
+            .add_or_replace_stash_item(stash_item_2.clone())
+            .unwrap();
 
         assert!(result.is_none());
         for stash_item in &[&stash_item_1, &stash_item_2] {
@@ -228,10 +249,40 @@ mod tests {
             NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
         );
 
-        let result = product.add_or_replace_stash_item(stash_item2.clone());
+        let result = product
+            .add_or_replace_stash_item(stash_item2.clone())
+            .unwrap();
 
         assert_eq!(result, Some(stash_item_1));
         assert!(product.stash_items().contains(&&stash_item2));
+    }
+
+    #[test]
+    fn test_add_stash_item_duplicate_expiry_date() {
+        let stash_item_1 = StashItem::new(
+            Uuid::new_v4(),
+            1.try_into().unwrap(),
+            NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
+        );
+
+        let mut product = Product::new(
+            "ID".parse().unwrap(),
+            "Brand".parse().unwrap(),
+            "Name",
+            vec![stash_item_1.clone()],
+        );
+
+        let stash_item_2 = StashItem::new(
+            Uuid::new_v4(),
+            2.try_into().unwrap(),
+            stash_item_1.expiry_date().clone(),
+        );
+
+        let result = product.add_or_replace_stash_item(stash_item_2.clone());
+
+        assert!(result.is_err());
+        assert!(product.stash_items().contains(&&stash_item_1));
+        assert!(!product.stash_items().contains(&&stash_item_2));
     }
 
     #[test]
@@ -249,7 +300,9 @@ mod tests {
             NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
         );
 
-        product.add_or_replace_stash_item(stash_item.clone());
+        product
+            .add_or_replace_stash_item(stash_item.clone())
+            .unwrap();
 
         product.remove_stash_item_by_id(stash_item.id());
 

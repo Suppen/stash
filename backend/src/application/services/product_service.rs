@@ -70,7 +70,7 @@ impl SaveStashItem for ProductService {
             Err(err) => return Err(err),
         };
 
-        product.add_or_replace_stash_item(stash_item);
+        product.add_or_replace_stash_item(stash_item)?;
 
         self.product_repository.save(product)
     }

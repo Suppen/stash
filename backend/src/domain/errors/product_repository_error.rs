@@ -1,4 +1,4 @@
-use super::{BrandError, ProductIdError, QuantityError};
+use super::{BrandError, DuplicateExpiryDateError, ProductIdError, QuantityError};
 
 /// Error type for ProductRepository
 #[derive(Debug, PartialEq, Eq)]
@@ -13,6 +13,8 @@ pub enum ProductRepositoryError {
     QuantityError(QuantityError),
     /// Error related to expiry date
     ExpiryDateError(chrono::ParseError),
+    /// Error signalling that a product with the same expiry date already exists
+    DuplicateExpiryDateError,
     /// Product already exists
     ProductAlreadyExists,
     /// Product not found
@@ -30,6 +32,9 @@ impl std::fmt::Display for ProductRepositoryError {
             ProductRepositoryError::QuantityError(error) => error.fmt(f),
             ProductRepositoryError::ExpiryDateError(error) => {
                 write!(f, "Expiry date error: {}", error)
+            }
+            ProductRepositoryError::DuplicateExpiryDateError => {
+                write!(f, "Duplicate expiry date")
             }
             ProductRepositoryError::ProductAlreadyExists => write!(f, "Product already exists"),
             ProductRepositoryError::ProductNotFound => write!(f, "Product not found"),
@@ -67,5 +72,11 @@ impl From<QuantityError> for ProductRepositoryError {
 impl From<chrono::ParseError> for ProductRepositoryError {
     fn from(error: chrono::ParseError) -> Self {
         Self::ExpiryDateError(error)
+    }
+}
+
+impl From<DuplicateExpiryDateError> for ProductRepositoryError {
+    fn from(_: DuplicateExpiryDateError) -> Self {
+        Self::DuplicateExpiryDateError
     }
 }
