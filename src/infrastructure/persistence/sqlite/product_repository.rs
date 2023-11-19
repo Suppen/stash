@@ -108,6 +108,22 @@ impl ProductRepositoryTrait for ProductRepository {
         }
     }
 
+    fn exists_by_id(&self, id: &ProductId) -> Result<bool, ProductRepositoryError> {
+        let conn = self.conn();
+        let mut stmt = conn.prepare("SELECT COUNT(*) FROM products WHERE id = :id LIMIT 1")?;
+        let mut rows = stmt.query(named_params! { ":id": id.value() })?;
+
+        let row = rows.next()?;
+
+        if let Some(row) = row {
+            let count: i64 = row.get(0)?;
+
+            Ok(count > 0)
+        } else {
+            Ok(false)
+        }
+    }
+
     fn save(&self, product: Product) -> Result<(), ProductRepositoryError> {
         let mut conn = self.conn();
 
@@ -236,214 +252,244 @@ mod tests {
         assert_eq!(found_product, product);
     }
 
-    //#[test]
-    //fn test_find_by_id_not_found() {
-    //let repo = get_repo();
+    #[test]
+    fn test_find_by_id_not_found() {
+        let repo = get_repo();
 
-    //let product_id: ProductId = "ID".parse().unwrap();
+        let product_id: ProductId = "ID".parse().unwrap();
 
-    //let found_product = repo.find_by_id(&product_id).unwrap();
+        let found_product = repo.find_by_id(&product_id).unwrap();
 
-    //assert!(found_product.is_none());
-    //}
+        assert!(found_product.is_none());
+    }
 
-    //#[test]
-    //fn test_save_new() {
-    //let repo = get_repo();
+    #[test]
+    fn test_exists_by_id_true() {
+        let repo = get_repo();
 
-    //let product_id: ProductId = "ID".parse().unwrap();
-    //let product = Product::new(
-    //product_id.clone(),
-    //"BRAND".parse().unwrap(),
-    //"NAME",
-    //vec![StashItem::new(
-    //Uuid::new_v4(),
-    //1.try_into().unwrap(),
-    //NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-    //)],
-    //);
+        let product_id: ProductId = "ID".parse().unwrap();
 
-    //repo.save(product.clone()).unwrap();
+        repo.save(Product::new(
+            product_id.clone(),
+            "BRAND".parse().unwrap(),
+            "NAME",
+            vec![],
+        ))
+        .unwrap();
 
-    //let found_product = repo.find_by_id(&product_id).unwrap().unwrap();
+        let exists = repo.exists_by_id(&product_id).unwrap();
 
-    //assert_eq!(found_product, product);
-    //}
+        assert!(exists);
+    }
 
-    //#[test]
-    //fn test_save_update() {
-    //let repo = get_repo();
+    #[test]
+    fn test_exists_by_id_false() {
+        let repo = get_repo();
 
-    //let product_id: ProductId = "ID".parse().unwrap();
-    //let mut product = Product::new(
-    //product_id.clone(),
-    //"BRAND".parse().unwrap(),
-    //"NAME",
-    //vec![StashItem::new(
-    //Uuid::new_v4(),
-    //1.try_into().unwrap(),
-    //NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-    //)],
-    //);
+        let product_id: ProductId = "ID".parse().unwrap();
 
-    //repo.save(product.clone()).unwrap();
+        let exists = repo.exists_by_id(&product_id).unwrap();
 
-    //product.set_name("NEW NAME".to_string());
+        assert!(!exists);
+    }
 
-    //repo.save(product.clone()).unwrap();
+    #[test]
+    fn test_save_new() {
+        let repo = get_repo();
 
-    //let found_product = repo.find_by_id(&product_id).unwrap().unwrap();
+        let product_id: ProductId = "ID".parse().unwrap();
+        let product = Product::new(
+            product_id.clone(),
+            "BRAND".parse().unwrap(),
+            "NAME",
+            vec![StashItem::new(
+                Uuid::new_v4(),
+                1.try_into().unwrap(),
+                NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
+            )],
+        );
 
-    //assert_eq!(found_product, product);
-    //}
+        repo.save(product.clone()).unwrap();
 
-    //#[test]
-    //fn test_save_update_add_stash_item() {
-    //let repo = get_repo();
+        let found_product = repo.find_by_id(&product_id).unwrap().unwrap();
 
-    //let product_id: ProductId = "ID".parse().unwrap();
-    //let mut product = Product::new(
-    //product_id.clone(),
-    //"BRAND".parse().unwrap(),
-    //"NAME",
-    //vec![StashItem::new(
-    //Uuid::new_v4(),
-    //1.try_into().unwrap(),
-    //NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-    //)],
-    //);
+        assert_eq!(found_product, product);
+    }
 
-    //repo.save(product.clone()).unwrap();
+    #[test]
+    fn test_save_update() {
+        let repo = get_repo();
 
-    //product.add_or_replace_stash_item(StashItem::new(
-    //Uuid::new_v4(),
-    //2.try_into().unwrap(),
-    //NaiveDate::from_ymd_opt(2021, 1, 2).unwrap(),
-    //));
+        let product_id: ProductId = "ID".parse().unwrap();
+        let mut product = Product::new(
+            product_id.clone(),
+            "BRAND".parse().unwrap(),
+            "NAME",
+            vec![StashItem::new(
+                Uuid::new_v4(),
+                1.try_into().unwrap(),
+                NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
+            )],
+        );
 
-    //repo.save(product.clone()).unwrap();
+        repo.save(product.clone()).unwrap();
 
-    //let found_product = repo.find_by_id(&product_id).unwrap().unwrap();
+        product.set_name("NEW NAME".to_string());
 
-    //assert_eq!(found_product, product);
-    //}
+        repo.save(product.clone()).unwrap();
 
-    //#[test]
-    //fn test_save_update_remove_stash_item() {
-    //let repo = get_repo();
+        let found_product = repo.find_by_id(&product_id).unwrap().unwrap();
 
-    //let product_id: ProductId = "ID".parse().unwrap();
-    //let stash_item_id = Uuid::new_v4();
-    //let mut product = Product::new(
-    //product_id.clone(),
-    //"BRAND".parse().unwrap(),
-    //"NAME",
-    //vec![
-    //StashItem::new(
-    //stash_item_id,
-    //1.try_into().unwrap(),
-    //NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-    //),
-    //StashItem::new(
-    //Uuid::new_v4(),
-    //2.try_into().unwrap(),
-    //NaiveDate::from_ymd_opt(2021, 1, 2).unwrap(),
-    //),
-    //],
-    //);
+        assert_eq!(found_product, product);
+    }
 
-    //repo.save(product.clone()).unwrap();
+    #[test]
+    fn test_save_update_add_stash_item() {
+        let repo = get_repo();
 
-    //product.remove_stash_item_by_id(&stash_item_id).unwrap();
+        let product_id: ProductId = "ID".parse().unwrap();
+        let mut product = Product::new(
+            product_id.clone(),
+            "BRAND".parse().unwrap(),
+            "NAME",
+            vec![StashItem::new(
+                Uuid::new_v4(),
+                1.try_into().unwrap(),
+                NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
+            )],
+        );
 
-    //repo.save(product.clone()).unwrap();
+        repo.save(product.clone()).unwrap();
 
-    //let found_product = repo.find_by_id(&product_id).unwrap().unwrap();
+        product.add_or_replace_stash_item(StashItem::new(
+            Uuid::new_v4(),
+            2.try_into().unwrap(),
+            NaiveDate::from_ymd_opt(2021, 1, 2).unwrap(),
+        ));
 
-    //assert_eq!(found_product, product);
-    //}
+        repo.save(product.clone()).unwrap();
 
-    //#[test]
-    //fn test_save_all() {
-    //let repo = get_repo();
+        let found_product = repo.find_by_id(&product_id).unwrap().unwrap();
 
-    //let product_id: ProductId = "ID".parse().unwrap();
-    //let stash_item_to_remove = Uuid::new_v4();
-    //let stash_item_to_update = Uuid::new_v4();
-    //let mut product = Product::new(
-    //product_id.clone(),
-    //"BRAND".parse().unwrap(),
-    //"NAME",
-    //vec![
-    //StashItem::new(
-    //stash_item_to_remove,
-    //1.try_into().unwrap(),
-    //NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-    //),
-    //StashItem::new(
-    //stash_item_to_update,
-    //2.try_into().unwrap(),
-    //NaiveDate::from_ymd_opt(2021, 1, 2).unwrap(),
-    //),
-    //],
-    //);
+        assert_eq!(found_product, product);
+    }
 
-    //repo.save(product.clone()).unwrap();
+    #[test]
+    fn test_save_update_remove_stash_item() {
+        let repo = get_repo();
 
-    //product.set_name("NEW NAME".to_string());
-    //product.set_brand("NEW BRAND".parse().unwrap());
-    //product.add_or_replace_stash_item(StashItem::new(
-    //Uuid::new_v4(),
-    //3.try_into().unwrap(),
-    //NaiveDate::from_ymd_opt(2021, 1, 3).unwrap(),
-    //));
-    //product.add_or_replace_stash_item(StashItem::new(
-    //stash_item_to_update,
-    //4.try_into().unwrap(),
-    //NaiveDate::from_ymd_opt(2021, 1, 4).unwrap(),
-    //));
-    //product
-    //.remove_stash_item_by_id(&stash_item_to_remove)
-    //.unwrap();
+        let product_id: ProductId = "ID".parse().unwrap();
+        let stash_item_id = Uuid::new_v4();
+        let mut product = Product::new(
+            product_id.clone(),
+            "BRAND".parse().unwrap(),
+            "NAME",
+            vec![
+                StashItem::new(
+                    stash_item_id,
+                    1.try_into().unwrap(),
+                    NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
+                ),
+                StashItem::new(
+                    Uuid::new_v4(),
+                    2.try_into().unwrap(),
+                    NaiveDate::from_ymd_opt(2021, 1, 2).unwrap(),
+                ),
+            ],
+        );
 
-    //repo.save(product.clone()).unwrap();
+        repo.save(product.clone()).unwrap();
 
-    //let found_product = repo.find_by_id(&product_id).unwrap().unwrap();
+        product.remove_stash_item_by_id(&stash_item_id).unwrap();
 
-    //assert_eq!(found_product, product);
-    //}
+        repo.save(product.clone()).unwrap();
 
-    //#[test]
-    //fn test_delete_by_id() {
-    //let repo = get_repo();
+        let found_product = repo.find_by_id(&product_id).unwrap().unwrap();
 
-    //let product_id: ProductId = "ID".parse().unwrap();
-    //let product = Product::new(
-    //product_id.clone(),
-    //"BRAND".parse().unwrap(),
-    //"NAME",
-    //vec![StashItem::new(
-    //Uuid::new_v4(),
-    //1.try_into().unwrap(),
-    //NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-    //)],
-    //);
+        assert_eq!(found_product, product);
+    }
 
-    //repo.save(product.clone()).unwrap();
+    #[test]
+    fn test_save_all() {
+        let repo = get_repo();
 
-    //repo.delete_by_id(&product_id).unwrap();
+        let product_id: ProductId = "ID".parse().unwrap();
+        let stash_item_to_remove = Uuid::new_v4();
+        let stash_item_to_update = Uuid::new_v4();
+        let mut product = Product::new(
+            product_id.clone(),
+            "BRAND".parse().unwrap(),
+            "NAME",
+            vec![
+                StashItem::new(
+                    stash_item_to_remove,
+                    1.try_into().unwrap(),
+                    NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
+                ),
+                StashItem::new(
+                    stash_item_to_update,
+                    2.try_into().unwrap(),
+                    NaiveDate::from_ymd_opt(2021, 1, 2).unwrap(),
+                ),
+            ],
+        );
 
-    //let found_product = repo.find_by_id(&product_id).unwrap();
+        repo.save(product.clone()).unwrap();
 
-    //assert!(found_product.is_none());
-    //}
+        product.set_name("NEW NAME".to_string());
+        product.set_brand("NEW BRAND".parse().unwrap());
+        product.add_or_replace_stash_item(StashItem::new(
+            Uuid::new_v4(),
+            3.try_into().unwrap(),
+            NaiveDate::from_ymd_opt(2021, 1, 3).unwrap(),
+        ));
+        product.add_or_replace_stash_item(StashItem::new(
+            stash_item_to_update,
+            4.try_into().unwrap(),
+            NaiveDate::from_ymd_opt(2021, 1, 4).unwrap(),
+        ));
+        product
+            .remove_stash_item_by_id(&stash_item_to_remove)
+            .unwrap();
 
-    //#[test]
-    //fn test_delete_by_id_not_found() {
-    //let repo = get_repo();
+        repo.save(product.clone()).unwrap();
 
-    //let product_id: ProductId = "ID".parse().unwrap();
+        let found_product = repo.find_by_id(&product_id).unwrap().unwrap();
 
-    //repo.delete_by_id(&product_id).unwrap();
-    //}
+        assert_eq!(found_product, product);
+    }
+
+    #[test]
+    fn test_delete_by_id() {
+        let repo = get_repo();
+
+        let product_id: ProductId = "ID".parse().unwrap();
+        let product = Product::new(
+            product_id.clone(),
+            "BRAND".parse().unwrap(),
+            "NAME",
+            vec![StashItem::new(
+                Uuid::new_v4(),
+                1.try_into().unwrap(),
+                NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
+            )],
+        );
+
+        repo.save(product.clone()).unwrap();
+
+        repo.delete_by_id(&product_id).unwrap();
+
+        let found_product = repo.find_by_id(&product_id).unwrap();
+
+        assert!(found_product.is_none());
+    }
+
+    #[test]
+    fn test_delete_by_id_not_found() {
+        let repo = get_repo();
+
+        let product_id: ProductId = "ID".parse().unwrap();
+
+        repo.delete_by_id(&product_id).unwrap();
+    }
 }

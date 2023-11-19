@@ -13,6 +13,8 @@ pub enum ProductRepositoryError {
     QuantityError(QuantityError),
     /// Error related to expiry date
     ExpiryDateError(chrono::ParseError),
+    /// Product already exists
+    ProductAlreadyExists,
     /// Product not found
     ProductNotFound,
     /// Error related to the implementation of the repository
@@ -29,6 +31,7 @@ impl std::fmt::Display for ProductRepositoryError {
             ProductRepositoryError::ExpiryDateError(error) => {
                 write!(f, "Expiry date error: {}", error)
             }
+            ProductRepositoryError::ProductAlreadyExists => write!(f, "Product already exists"),
             ProductRepositoryError::ProductNotFound => write!(f, "Product not found"),
             ProductRepositoryError::PersisteneError(error) => write!(f, "{}", error),
         }

@@ -13,6 +13,17 @@ pub trait ProductRepository: Sync + Send {
     /// * `Err(_)` if the repository fails to get the product
     fn find_by_id(&self, id: &ProductId) -> Result<Option<Product>, ProductRepositoryError>;
 
+    /// Returns whether a product exists
+    ///
+    /// # Parameters
+    /// * `id` - The id of the product to check
+    ///
+    /// # Returns
+    /// * `Ok(true)` if the product exists
+    /// * `Ok(false)` if the product does not exist
+    /// * `Err(_)` if the repository fails to check the product
+    fn exists_by_id(&self, id: &ProductId) -> Result<bool, ProductRepositoryError>;
+
     /// Saves a product to the repository, or updates it if it already exists
     ///
     /// # Parameters
