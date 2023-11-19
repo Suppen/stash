@@ -2,8 +2,7 @@ use std::sync::Arc;
 
 use crate::{
     application::use_cases::{
-        CreateProduct, DeleteProductById, GetProductById, SaveProduct, SaveStashItem,
-        UpdateProductById,
+        CreateProduct, DeleteProductById, GetProductById, SaveStashItem, UpdateProductById,
     },
     domain::{
         entities::{Product, StashItem},
@@ -49,12 +48,6 @@ impl UpdateProductById for ProductService {
             return Err(ProductRepositoryError::ProductNotFound);
         }
 
-        self.product_repository.save(product)
-    }
-}
-
-impl SaveProduct for ProductService {
-    fn save_product(&self, product: Product) -> Result<(), ProductRepositoryError> {
         self.product_repository.save(product)
     }
 }
@@ -128,28 +121,6 @@ mod tests {
         let found_product = product_service.get_product_by_id(&product_id).unwrap();
 
         assert!(found_product.is_none());
-    }
-
-    #[test]
-    fn test_save_product() {
-        let product = Product::new(
-            "ID".parse().unwrap(),
-            "BRAND".parse().unwrap(),
-            "NAME",
-            vec![],
-        );
-
-        let mut product_repository = MockProductRepository::new();
-        product_repository
-            .expect_save()
-            .with(eq(product.clone()))
-            .returning(|_| Ok(()));
-
-        let product_service = ProductService::new(Arc::new(Box::new(product_repository)));
-
-        let saved_product = product_service.save_product(product);
-
-        assert!(saved_product.is_ok());
     }
 
     #[test]
