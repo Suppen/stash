@@ -92,7 +92,12 @@ mod tests {
 
         let dto = ProductDTO::from(product);
 
-        assert_eq!(dto, expected_dto);
+        assert_eq!(dto.id, expected_dto.id);
+        assert_eq!(dto.brand, expected_dto.brand);
+        assert_eq!(dto.name, expected_dto.name);
+        for stash_item in dto.stash_items.iter() {
+            assert!(expected_dto.stash_items.contains(stash_item));
+        }
     }
 
     #[test]

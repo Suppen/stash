@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use getset::{Getters, Setters};
 use uuid::Uuid;
@@ -54,7 +54,7 @@ impl Product {
     /// # Returns
     ///
     /// * The list of stash items associated with the product
-    pub fn stash_items(&self) -> Vec<&StashItem> {
+    pub fn stash_items(&self) -> HashSet<&StashItem> {
         self.stash_items.values().collect()
     }
 
