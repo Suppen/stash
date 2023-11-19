@@ -11,8 +11,6 @@ pub enum StashItemRepositoryError {
     QuantityError(QuantityError),
     /// Error related to the implementation of the repository
     PersistenceError(String),
-    /// The product the stash item is an instance of does not exist
-    ProductDoesNotExist,
 }
 
 impl std::fmt::Display for StashItemRepositoryError {
@@ -22,9 +20,6 @@ impl std::fmt::Display for StashItemRepositoryError {
             StashItemRepositoryError::ProductIdError(error) => error.fmt(f),
             StashItemRepositoryError::QuantityError(error) => error.fmt(f),
             StashItemRepositoryError::PersistenceError(error) => write!(f, "{}", error),
-            StashItemRepositoryError::ProductDoesNotExist => {
-                write!(f, "No product with the given ID exists")
-            }
         }
     }
 }

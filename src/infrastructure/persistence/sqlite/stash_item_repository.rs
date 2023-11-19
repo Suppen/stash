@@ -138,16 +138,6 @@ impl StashItemRepositoryTrait for StashItemRepository {
 
         match result {
             Ok(_) => Ok(()),
-            Err(rusqlite::Error::SqliteFailure(error, _)) => {
-                if error.code == rusqlite::ErrorCode::ConstraintViolation {
-                    // There is only one constraint
-                    Err(StashItemRepositoryError::ProductDoesNotExist)
-                } else {
-                    Err(StashItemRepositoryError::PersistenceError(
-                        error.to_string(),
-                    ))
-                }
-            }
             Err(error) => Err(StashItemRepositoryError::PersistenceError(
                 error.to_string(),
             )),
@@ -391,7 +381,7 @@ mod tests {
         assert!(result.is_err());
         assert!(matches!(
             result.unwrap_err(),
-            StashItemRepositoryError::ProductDoesNotExist
+            StashItemRepositoryError::PersistenceError(_)
         ));
     }
 

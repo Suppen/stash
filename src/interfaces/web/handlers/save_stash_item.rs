@@ -17,9 +17,7 @@ pub async fn save_stash_item(
 
     match stash_item_service.save_stash_item(stash_item) {
         Ok(()) => HttpResponse::Ok().body("Stash item saved"),
-        Err(crate::domain::errors::StashItemRepositoryError::ProductDoesNotExist) => {
-            HttpResponse::NotFound().body("Product does not exist")
-        }
+        // TODO Handle the case where the product doesn't exist and give a 404
         Err(err) => {
             println!("Error: {}", err);
             HttpResponse::InternalServerError().body("Internal server error")
