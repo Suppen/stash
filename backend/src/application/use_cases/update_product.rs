@@ -1,6 +1,6 @@
 use crate::domain::{entities::Product, errors::ProductRepositoryError, value_objects::ProductId};
 
-pub trait UpdateProductById {
+pub trait UpdateProduct {
     /// Updates a product by its ID
     ///
     /// # Parameters
@@ -10,7 +10,7 @@ pub trait UpdateProductById {
     /// # Returns
     /// `Ok(())` if the product was updated successfully
     /// `Err(String)` if the product could not be updated
-    fn update_product_by_id(
+    fn update_product(
         &self,
         id: &ProductId,
         product: Product,

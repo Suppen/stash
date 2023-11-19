@@ -2,8 +2,8 @@ use std::{collections::HashSet, sync::Arc};
 
 use crate::{
     application::use_cases::{
-        AddStashItem, CreateProduct, DeleteProductById, DeleteStashItem, GetProductById,
-        GetStashItems, UpdateProductById, UpdateStashItem,
+        AddStashItem, CreateProduct, DeleteProduct, DeleteStashItem, GetProduct, GetStashItems,
+        UpdateProduct, UpdateStashItem,
     },
     domain::{
         entities::{Product, StashItem},
@@ -23,8 +23,8 @@ impl ProductService {
     }
 }
 
-impl GetProductById for ProductService {
-    fn get_product_by_id(&self, id: &ProductId) -> Result<Option<Product>, ProductRepositoryError> {
+impl GetProduct for ProductService {
+    fn get_product(&self, id: &ProductId) -> Result<Option<Product>, ProductRepositoryError> {
         self.product_repository.find_by_id(id)
     }
 }
@@ -39,8 +39,8 @@ impl CreateProduct for ProductService {
     }
 }
 
-impl UpdateProductById for ProductService {
-    fn update_product_by_id(
+impl UpdateProduct for ProductService {
+    fn update_product(
         &self,
         id: &ProductId,
         product: Product,
@@ -53,8 +53,8 @@ impl UpdateProductById for ProductService {
     }
 }
 
-impl DeleteProductById for ProductService {
-    fn delete_product_by_id(&self, id: &ProductId) -> Result<(), ProductRepositoryError> {
+impl DeleteProduct for ProductService {
+    fn delete_product(&self, id: &ProductId) -> Result<(), ProductRepositoryError> {
         self.product_repository.delete_by_id(id)
     }
 }
@@ -160,10 +160,7 @@ mod tests {
 
         let product_service = ProductService::new(Arc::new(Box::new(product_repository)));
 
-        let found_product = product_service
-            .get_product_by_id(&product_id)
-            .unwrap()
-            .unwrap();
+        let found_product = product_service.get_product(&product_id).unwrap().unwrap();
 
         assert_eq!(found_product, product);
     }
@@ -180,7 +177,7 @@ mod tests {
 
         let product_service = ProductService::new(Arc::new(Box::new(product_repository)));
 
-        let found_product = product_service.get_product_by_id(&product_id).unwrap();
+        let found_product = product_service.get_product(&product_id).unwrap();
 
         assert!(found_product.is_none());
     }
@@ -197,7 +194,7 @@ mod tests {
 
         let product_service = ProductService::new(Arc::new(Box::new(product_repository)));
 
-        let deleted_product = product_service.delete_product_by_id(&product_id);
+        let deleted_product = product_service.delete_product(&product_id);
 
         assert!(deleted_product.is_ok());
     }
@@ -214,7 +211,7 @@ mod tests {
 
         let product_service = ProductService::new(Arc::new(Box::new(product_repository)));
 
-        let deleted_product = product_service.delete_product_by_id(&product_id);
+        let deleted_product = product_service.delete_product(&product_id);
 
         assert!(deleted_product.is_ok());
     }

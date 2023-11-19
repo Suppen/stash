@@ -1,12 +1,12 @@
 use actix_web::{web, HttpResponse};
 
 use crate::{
-    application::{services::ProductService, use_cases::UpdateProductById},
+    application::{services::ProductService, use_cases::UpdateProduct},
     domain::{entities::Product, errors::ProductRepositoryError, value_objects::ProductId},
     interfaces::web::dtos::ProductDTO,
 };
 
-pub async fn update_product_by_id(
+pub async fn update_product(
     product_service: web::Data<ProductService>,
     path: web::Path<String>,
     product_dto: web::Json<ProductDTO>,
@@ -25,7 +25,7 @@ pub async fn update_product_by_id(
         return HttpResponse::BadRequest().body("Product id mismatch");
     }
 
-    match product_service.update_product_by_id(&product_id, product) {
+    match product_service.update_product(&product_id, product) {
         Ok(()) => HttpResponse::NoContent().finish(),
         Err(ProductRepositoryError::ProductNotFound) => {
             HttpResponse::NotFound().body("Product not found")

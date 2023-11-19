@@ -1,6 +1,6 @@
 use crate::domain::{errors::ProductRepositoryError, value_objects::ProductId};
 
-pub trait DeleteProductById {
+pub trait DeleteProduct {
     /// Deletes a product by id
     ///
     /// # Parameters
@@ -9,5 +9,5 @@ pub trait DeleteProductById {
     /// # Returns
     /// * `Ok(())` if the product was deleted, or was not there in the first place
     /// * `Err(_)` if the underlying data store fails to delete the product
-    fn delete_product_by_id(&self, id: &ProductId) -> Result<(), ProductRepositoryError>;
+    fn delete_product(&self, id: &ProductId) -> Result<(), ProductRepositoryError>;
 }
