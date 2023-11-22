@@ -22,6 +22,7 @@ pub async fn add_stash_item(
     };
 
     match product_service.add_stash_item(&product_id, stash_item) {
+        // TODO Return 201 Created and the stash item
         Ok(_) => HttpResponse::NoContent().finish(),
         Err(ProductRepositoryError::StashItemExists) => {
             HttpResponse::Conflict().body("Stash item already exists")
