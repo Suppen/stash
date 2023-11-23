@@ -30,12 +30,23 @@ impl GetProduct for ProductService {
 }
 
 impl CreateProduct for ProductService {
-    fn create_product(&self, product: Product) -> Result<(), ProductRepositoryError> {
+    fn create_product(&self, product: Product) -> Result<Product, ProductRepositoryError> {
+        // Clone the ID so we can use it to fetch the product after saving it
+        let product_id = product.id().clone();
+
         if self.product_repository.exists_by_id(&product.id())? {
             return Err(ProductRepositoryError::ProductAlreadyExists);
         }
 
-        self.product_repository.save(product)
+        match self.product_repository.save(product) {
+            Ok(_) => match self.product_repository.find_by_id(&product_id) {
+                Ok(Some(product)) => Ok(product),
+                // This should never happen; we just created it!
+                Ok(None) => panic!("Product not found after saving"),
+                Err(e) => Err(e),
+            },
+            Err(e) => Err(e),
+        }
     }
 }
 
@@ -180,6 +191,33 @@ mod tests {
         let found_product = product_service.get_product(&product_id).unwrap();
 
         assert!(found_product.is_none());
+    }
+
+    #[test]
+    fn test_create_product() {
+        let product_id: ProductId = "ID".parse().unwrap();
+        let product = Product::new(product_id.clone(), "BRAND".parse().unwrap(), "NAME", vec![]);
+        let returned_product = product.clone();
+
+        let mut product_repository = MockProductRepository::new();
+        product_repository
+            .expect_exists_by_id()
+            .with(eq(product_id.clone()))
+            .returning(|_| Ok(false));
+        product_repository
+            .expect_save()
+            .with(eq(product.clone()))
+            .returning(|_| Ok(()));
+        product_repository
+            .expect_find_by_id()
+            .with(eq(product_id.clone()))
+            .returning(move |_| Ok(Some(returned_product.clone())));
+
+        let product_service = ProductService::new(Arc::new(Box::new(product_repository)));
+
+        let created_product = product_service.create_product(product.clone()).unwrap();
+
+        assert_eq!(created_product, product);
     }
 
     #[test]

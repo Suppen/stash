@@ -1,4 +1,7 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{
+    web::{self},
+    HttpResponse,
+};
 
 use crate::{
     application::{services::ProductService, use_cases::CreateProduct},
@@ -16,7 +19,9 @@ pub async fn create_product(
     };
 
     match product_service.create_product(product) {
-        Ok(()) => HttpResponse::NoContent().finish(),
+        Ok(product) => HttpResponse::Created()
+            .append_header(("Location", format!("/products/{}", product.id())))
+            .json(ProductDTO::from(product)),
         Err(ProductRepositoryError::ProductAlreadyExists) => {
             HttpResponse::Conflict().body("Product already exists")
         }

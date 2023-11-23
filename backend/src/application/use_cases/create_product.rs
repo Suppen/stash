@@ -7,7 +7,7 @@ pub trait CreateProduct {
     /// - `product` - The product to create
     ///
     /// # Returns
-    /// `Ok(Product)` if the product was created successfully
+    /// `Ok(ProductId)` if the product was created successfully
     /// `Err(String)` if the product could not be created
-    fn create_product(&self, product: Product) -> Result<(), ProductRepositoryError>;
+    fn create_product(&self, product: Product) -> Result<Product, ProductRepositoryError>;
 }
