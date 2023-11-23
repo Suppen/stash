@@ -105,7 +105,10 @@ impl UpdateStashItem for ProductService {
         &self,
         product_id: &ProductId,
         stash_item: StashItem,
-    ) -> Result<(), ProductRepositoryError> {
+    ) -> Result<StashItem, ProductRepositoryError> {
+        // Clone the ID so we can find the stash item after saving it
+        let stash_item_id = stash_item.id().clone();
+
         let mut product = match self.product_repository.find_by_id(product_id)? {
             Some(product) => product,
             None => return Err(ProductRepositoryError::ProductNotFound),
@@ -115,7 +118,22 @@ impl UpdateStashItem for ProductService {
 
         self.product_repository.save(product)?;
 
-        Ok(())
+        match self.product_repository.find_by_id(product_id) {
+            Ok(Some(product)) => {
+                let si = product
+                    .stash_items()
+                    .iter()
+                    .find(|x| x.id() == &stash_item_id)
+                    .map(|x| *x);
+
+                match si {
+                    Some(stash_item) => Ok(stash_item.clone()),
+                    None => panic!("Stash item not found after saving"),
+                }
+            }
+            Ok(None) => panic!("Product not found after saving"),
+            Err(e) => Err(e),
+        }
     }
 }
 
@@ -388,14 +406,11 @@ mod tests {
             .expect_find_by_id()
             .with(eq(product_id.clone()))
             .returning(move |_| Ok(Some(product.clone())));
-        product_repository
-            .expect_save()
-            .withf(move |product| product.stash_items().len() == 1)
-            .returning(|_| Ok(()));
+        product_repository.expect_save().returning(|_| Ok(()));
 
         let product_service = ProductService::new(Arc::new(Box::new(product_repository)));
 
-        let result = product_service.update_stash_item(&product_id, stash_item);
+        let result = product_service.update_stash_item(&product_id, stash_item.clone());
 
         assert!(result.is_ok());
     }

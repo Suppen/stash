@@ -34,7 +34,7 @@ pub async fn update_stash_item(
     }
 
     match product_service.update_stash_item(&product_id, stash_item) {
-        Ok(_) => HttpResponse::NoContent().finish(),
+        Ok(stash_item) => HttpResponse::Ok().json(StashItemDTO::from(stash_item)),
         Err(ProductRepositoryError::StashItemNotFound) => {
             HttpResponse::NotFound().body("Stash item not found")
         }

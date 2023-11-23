@@ -16,5 +16,5 @@ pub trait UpdateStashItem {
         &self,
         product_id: &ProductId,
         stash_item: StashItem,
-    ) -> Result<(), ProductRepositoryError>;
+    ) -> Result<StashItem, ProductRepositoryError>;
 }
