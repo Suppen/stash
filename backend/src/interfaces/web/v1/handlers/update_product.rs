@@ -3,7 +3,7 @@ use actix_web::{web, HttpResponse};
 use crate::{
     application::{services::ProductService, use_cases::UpdateProduct},
     domain::{entities::Product, errors::ProductRepositoryError, value_objects::ProductId},
-    interfaces::web::dtos::ProductDTO,
+    interfaces::web::v1::dtos::ProductDTO,
 };
 
 pub async fn update_product(

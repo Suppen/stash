@@ -6,7 +6,7 @@ use actix_web::{
 use crate::{
     application::{services::ProductService, use_cases::CreateProduct},
     domain::{entities::Product, errors::ProductRepositoryError},
-    interfaces::web::dtos::ProductDTO,
+    interfaces::web::v1::dtos::ProductDTO,
 };
 
 pub async fn create_product(

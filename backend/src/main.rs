@@ -5,7 +5,7 @@ use rsstash::{
     application::services::ProductService,
     domain::repositories::ProductRepository as ProductRepositoryTrait,
     infrastructure::persistence::sqlite::{db::setup_db, ProductRepository},
-    interfaces::web::router::configure_routes,
+    interfaces::web::v1::router::configure_routes,
 };
 
 #[actix_web::main]

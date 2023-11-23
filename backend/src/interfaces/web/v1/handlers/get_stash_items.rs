@@ -3,7 +3,7 @@ use actix_web::{web, HttpResponse};
 use crate::{
     application::{services::ProductService, use_cases::GetStashItems},
     domain::{errors::ProductRepositoryError, value_objects::ProductId},
-    interfaces::web::dtos::StashItemDTO,
+    interfaces::web::v1::dtos::StashItemDTO,
 };
 
 pub async fn get_stash_items(

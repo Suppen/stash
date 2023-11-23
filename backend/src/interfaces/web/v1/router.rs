@@ -7,7 +7,7 @@ use super::handlers::{
 
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
-        web::scope("/products")
+        web::scope("/v1/products")
             .route("", web::post().to(create_product))
             .route("/{product_id}", web::get().to(get_product))
             .route("/{product_id}", web::put().to(update_product))

@@ -4,7 +4,7 @@ use uuid::Uuid;
 use crate::{
     application::{services::ProductService, use_cases::UpdateStashItem},
     domain::{entities::StashItem, errors::ProductRepositoryError, value_objects::ProductId},
-    interfaces::web::dtos::StashItemDTO,
+    interfaces::web::v1::dtos::StashItemDTO,
 };
 
 pub async fn update_stash_item(

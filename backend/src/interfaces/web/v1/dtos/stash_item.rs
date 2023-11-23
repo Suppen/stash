@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{domain::entities::StashItem, interfaces::web::errors::StashItemParseError};
+use crate::{domain::entities::StashItem, interfaces::web::v1::errors::StashItemParseError};
 
 /// DTO for a stash item
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

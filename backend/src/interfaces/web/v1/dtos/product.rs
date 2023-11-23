@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     domain::entities::{Product, StashItem},
-    interfaces::web::errors::ProductParseError,
+    interfaces::web::v1::errors::ProductParseError,
 };
 
 use super::StashItemDTO;
