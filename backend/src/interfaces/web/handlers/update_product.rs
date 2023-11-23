@@ -26,7 +26,7 @@ pub async fn update_product(
     }
 
     match product_service.update_product(&product_id, product) {
-        Ok(()) => HttpResponse::NoContent().finish(),
+        Ok(product) => HttpResponse::Ok().json(ProductDTO::from(product)),
         Err(ProductRepositoryError::ProductNotFound) => {
             HttpResponse::NotFound().body("Product not found")
         }

@@ -39,7 +39,7 @@ impl CreateProduct for ProductService {
         }
 
         match self.product_repository.save(product) {
-            Ok(_) => match self.product_repository.find_by_id(&product_id) {
+            Ok(()) => match self.product_repository.find_by_id(&product_id) {
                 Ok(Some(product)) => Ok(product),
                 // This should never happen; we just created it!
                 Ok(None) => panic!("Product not found after saving"),
@@ -55,12 +55,23 @@ impl UpdateProduct for ProductService {
         &self,
         id: &ProductId,
         product: Product,
-    ) -> Result<(), ProductRepositoryError> {
+    ) -> Result<Product, ProductRepositoryError> {
+        // Clone the ID so we can use it to fetch the product after saving it
+        let product_id = product.id().clone();
+
         if !self.product_repository.exists_by_id(id)? {
             return Err(ProductRepositoryError::ProductNotFound);
         }
 
-        self.product_repository.save(product)
+        match self.product_repository.save(product) {
+            Ok(()) => match self.product_repository.find_by_id(&product_id) {
+                Ok(Some(product)) => Ok(product),
+                // This should never happen; we just created it!
+                Ok(None) => panic!("Product not found after saving"),
+                Err(e) => Err(e),
+            },
+            Err(e) => Err(e),
+        }
     }
 }
 
@@ -221,7 +232,78 @@ mod tests {
     }
 
     #[test]
-    fn test_delete_product_by_id() {
+    fn test_create_product_already_exists() {
+        let product_id: ProductId = "ID".parse().unwrap();
+        let product = Product::new(product_id.clone(), "BRAND".parse().unwrap(), "NAME", vec![]);
+
+        let mut product_repository = MockProductRepository::new();
+        product_repository
+            .expect_exists_by_id()
+            .with(eq(product_id.clone()))
+            .returning(|_| Ok(true));
+
+        let product_service = ProductService::new(Arc::new(Box::new(product_repository)));
+
+        let created_product = product_service.create_product(product.clone());
+
+        assert_eq!(
+            created_product.unwrap_err(),
+            ProductRepositoryError::ProductAlreadyExists
+        );
+    }
+
+    #[test]
+    fn test_update_product() {
+        let product_id: ProductId = "ID".parse().unwrap();
+        let product = Product::new(product_id.clone(), "BRAND".parse().unwrap(), "NAME", vec![]);
+        let returned_product = product.clone();
+
+        let mut product_repository = MockProductRepository::new();
+        product_repository
+            .expect_exists_by_id()
+            .with(eq(product_id.clone()))
+            .returning(|_| Ok(true));
+        product_repository
+            .expect_save()
+            .with(eq(product.clone()))
+            .returning(|_| Ok(()));
+        product_repository
+            .expect_find_by_id()
+            .with(eq(product_id.clone()))
+            .returning(move |_| Ok(Some(returned_product.clone())));
+
+        let product_service = ProductService::new(Arc::new(Box::new(product_repository)));
+
+        let updated_product = product_service
+            .update_product(&product_id, product.clone())
+            .unwrap();
+
+        assert_eq!(updated_product, product);
+    }
+
+    #[test]
+    fn test_update_product_not_found() {
+        let product_id: ProductId = "ID".parse().unwrap();
+        let product = Product::new(product_id.clone(), "BRAND".parse().unwrap(), "NAME", vec![]);
+
+        let mut product_repository = MockProductRepository::new();
+        product_repository
+            .expect_exists_by_id()
+            .with(eq(product_id.clone()))
+            .returning(|_| Ok(false));
+
+        let product_service = ProductService::new(Arc::new(Box::new(product_repository)));
+
+        let updated_product = product_service.update_product(&product_id, product.clone());
+
+        assert_eq!(
+            updated_product.unwrap_err(),
+            ProductRepositoryError::ProductNotFound
+        );
+    }
+
+    #[test]
+    fn test_delete_product() {
         let product_id: ProductId = "ID".parse().unwrap();
 
         let mut product_repository = MockProductRepository::new();
@@ -238,7 +320,7 @@ mod tests {
     }
 
     #[test]
-    fn test_delete_product_by_id_not_found() {
+    fn test_delete_product_not_found() {
         let product_id: ProductId = "ID".parse().unwrap();
 
         let mut product_repository = MockProductRepository::new();

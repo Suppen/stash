@@ -8,11 +8,11 @@ pub trait UpdateProduct {
     /// - `product` - The product to update
     ///
     /// # Returns
-    /// `Ok(())` if the product was updated successfully
+    /// `Ok(Product)` if the product was updated
     /// `Err(String)` if the product could not be updated
     fn update_product(
         &self,
         id: &ProductId,
         product: Product,
-    ) -> Result<(), ProductRepositoryError>;
+    ) -> Result<Product, ProductRepositoryError>;
 }
