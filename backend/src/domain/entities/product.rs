@@ -61,6 +61,17 @@ impl Product {
         self.stash_items.values().collect()
     }
 
+    /// Gets the stash item with the given ID, if it exists
+    ///
+    /// # Arguments
+    /// * `stash_item_id` - ID of the stash item to get
+    ///
+    /// # Returns
+    /// * The stash item with the given ID, if one exists
+    pub fn stash_item(&self, stash_item_id: &Uuid) -> Option<&StashItem> {
+        self.stash_items.get(stash_item_id)
+    }
+
     /// Checks if the product has a stash item with the given ID
     ///
     /// # Arguments
@@ -201,6 +212,36 @@ mod tests {
         for stash_item in &stash_items {
             assert!(product.stash_items().contains(&stash_item));
         }
+    }
+
+    #[test]
+    fn test_stash_item() {
+        let stash_item = StashItem::new(
+            Uuid::new_v4(),
+            1.try_into().unwrap(),
+            NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
+        );
+
+        let product = Product::new(
+            "ID".parse().unwrap(),
+            "Brand".parse().unwrap(),
+            "Name",
+            vec![stash_item.clone()],
+        );
+
+        assert_eq!(product.stash_item(stash_item.id()), Some(&stash_item));
+    }
+
+    #[test]
+    fn test_stash_item_doesnt_exist() {
+        let product = Product::new(
+            "ID".parse().unwrap(),
+            "Brand".parse().unwrap(),
+            "Name",
+            vec![],
+        );
+
+        assert_eq!(product.stash_item(&Uuid::new_v4()), None);
     }
 
     #[test]
