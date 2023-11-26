@@ -40,11 +40,11 @@ impl Product {
     /// # Returns
     ///
     /// * A new Product with the given data
-    pub fn new(id: ProductId, brand: Brand, name: &str, stash_items: Vec<StashItem>) -> Self {
+    pub fn new(id: ProductId, brand: Brand, name: String, stash_items: Vec<StashItem>) -> Self {
         let mut product = Self {
             id,
             brand,
-            name: name.to_string(),
+            name,
             stash_items: HashMap::new(),
         };
 

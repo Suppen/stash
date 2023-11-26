@@ -5,6 +5,8 @@ use crate::domain::{
 
 use super::{Product, StashItem};
 
+/// A fake product builder
+#[derive(Debug)]
 pub struct FakeProduct {
     id: Option<ProductId>,
     brand: Option<Brand>,
@@ -73,7 +75,7 @@ impl FakeProduct {
         Product::new(
             self.id.unwrap_or_else(ProductId::random),
             self.brand.unwrap_or_else(Brand::random),
-            self.name.unwrap_or_else(FakeProduct::random_name).as_str(),
+            self.name.unwrap_or_else(FakeProduct::random_name),
             self.stash_items
                 .unwrap_or_else(FakeProduct::random_stash_items),
         )

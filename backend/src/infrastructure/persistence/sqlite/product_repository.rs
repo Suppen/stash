@@ -39,7 +39,7 @@ impl ProductRepository {
         let brand = row.get::<_, Brand>("brand")?;
         let name = row.get::<_, String>("name")?;
 
-        Ok(Product::new(id, brand, &name, vec![]))
+        Ok(Product::new(id, brand, name, vec![]))
     }
 
     /// Converts a row into a [`StashItem`]
@@ -268,7 +268,7 @@ mod tests {
         repo.save(Product::new(
             product_id.clone(),
             "BRAND".parse().unwrap(),
-            "NAME",
+            "NAME".to_string(),
             vec![],
         ))
         .unwrap();

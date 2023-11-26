@@ -38,7 +38,7 @@ impl TryFrom<ProductDTO> for Product {
         Ok(Self::new(
             dto.id.parse()?,
             dto.brand.parse()?,
-            dto.name.as_str(),
+            dto.name,
             dto.stash_items
                 .into_iter()
                 .map(|item| StashItem::try_from(item))
@@ -78,7 +78,7 @@ mod tests {
         let product = Product::new(
             expected_dto.id.parse().unwrap(),
             expected_dto.brand.parse().unwrap(),
-            expected_dto.name.as_str(),
+            expected_dto.name.clone(),
             expected_dto
                 .stash_items
                 .iter()
