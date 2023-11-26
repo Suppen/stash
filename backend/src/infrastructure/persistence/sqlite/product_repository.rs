@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use chrono::NaiveDate;
-use rusqlite::{named_params, Connection, Transaction};
+use rusqlite::{named_params, Connection, ToSql, Transaction};
 use uuid::Uuid;
 
 use crate::domain::{
@@ -49,6 +49,7 @@ impl ProductRepository {
         // Create placeholders for the query. This becomes "?, ?, ?, ..."
         let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>();
 
+        // TODO Clean up this mess
         let mut params: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
         for id in ids {
             let id = Box::new(id.to_string());
@@ -60,6 +61,8 @@ impl ProductRepository {
             "SELECT id, brand, name FROM products WHERE id IN ({})",
             placeholders.join(", ")
         ))?;
+
+        // TODO Somehow use query_map or query_and_then here?
         let mut rows = stmt.query(&params[..])?;
 
         let mut products = vec![];
@@ -110,6 +113,58 @@ impl ProductRepository {
         } else {
             Ok(None)
         }
+    }
+
+    /// Finds all products with at least one stash item expiring within the given date interval
+    ///
+    /// # Parameters
+    /// - `tx`: The transaction to use
+    /// - `after`: The start of the date range, inclusive
+    /// - `before`: The end of the date range, exclusive
+    ///
+    /// # Returns
+    /// A list of products with at least one stash item expiring within the given date interval
+    fn find_expiring_in_interval(
+        tx: &Transaction,
+        after: Option<NaiveDate>,
+        before: Option<NaiveDate>,
+    ) -> Result<Vec<Product>, ProductRepositoryError> {
+        // Make and execute the statement
+        let mut query = String::from("SELECT DISTINCT product_id FROM stash_items WHERE ");
+        let mut args: Vec<Box<dyn ToSql>> = Vec::new();
+
+        match (after, before) {
+            (Some(after), Some(before)) => {
+                query.push_str("expiry_date >= ? AND expiry_date < ?");
+                args.push(Box::new(after.to_string()));
+                args.push(Box::new(before.to_string()));
+            }
+            (Some(after), None) => {
+                query.push_str("expiry_date >= ?");
+                args.push(Box::new(after.to_string()));
+            }
+            (None, Some(before)) => {
+                query.push_str("expiry_date < ?");
+                args.push(Box::new(before.to_string()));
+            }
+            // TODO Error
+            (None, None) => {
+                return Ok(vec![]);
+            }
+        };
+
+        let args = args.iter().map(|arg| &**arg).collect::<Vec<_>>();
+
+        let product_ids = tx
+            .prepare(&query)?
+            .query_map(&args[..], |row| {
+                let product_id = row.get::<_, ProductId>("product_id")?;
+                Ok(product_id)
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
+        // Get the products
+        ProductRepository::find_by_ids(tx, &product_ids)
     }
 
     /// Saves a [`Product`] to the database. If the product already exists, it will be updated.
@@ -294,20 +349,20 @@ impl ProductRepositoryTrait for ProductRepository {
         let mut conn = self.conn();
         let tx = conn.transaction()?;
 
-        let product = ProductRepository::find_by_id(&tx, id);
+        let product = ProductRepository::find_by_id(&tx, id)?;
 
         tx.commit()?;
-        product
+        Ok(product)
     }
 
     fn find_by_ids(&self, ids: &[ProductId]) -> Result<Vec<Product>, ProductRepositoryError> {
         let mut conn = self.conn();
         let tx = conn.transaction()?;
 
-        let products = ProductRepository::find_by_ids(&tx, ids);
+        let products = ProductRepository::find_by_ids(&tx, ids)?;
 
         tx.commit()?;
-        products
+        Ok(products)
     }
 
     fn find_by_stash_item_id(
@@ -317,10 +372,24 @@ impl ProductRepositoryTrait for ProductRepository {
         let mut conn = self.conn();
         let tx = conn.transaction()?;
 
-        let result = ProductRepository::find_by_stash_item_id(&tx, stash_item_id);
+        let result = ProductRepository::find_by_stash_item_id(&tx, stash_item_id)?;
 
         tx.commit()?;
-        result
+        Ok(result)
+    }
+
+    fn find_expiring_in_interval(
+        &self,
+        after: Option<NaiveDate>,
+        before: Option<NaiveDate>,
+    ) -> Result<Vec<Product>, ProductRepositoryError> {
+        let mut conn = self.conn();
+        let tx = conn.transaction()?;
+
+        let products = ProductRepository::find_expiring_in_interval(&tx, after, before)?;
+
+        tx.commit()?;
+        Ok(products)
     }
 
     fn exists_by_id(&self, id: &ProductId) -> Result<bool, ProductRepositoryError> {
@@ -441,6 +510,124 @@ mod tests {
         let found_product = repo.find_by_stash_item_id(&stash_item_id).unwrap().unwrap();
 
         assert_eq!(found_product, product);
+    }
+
+    #[test]
+    fn test_find_expiring_in_interval_after() {
+        let repo = get_repo();
+
+        let product_1 = FakeProduct::new()
+            .with_stash_items(vec![FakeStashItem::new()
+                .with_expiry_date(NaiveDate::from_ymd_opt(2023, 1, 1).unwrap())
+                .build()])
+            .build();
+        let product_2 = FakeProduct::new()
+            .with_stash_items(vec![FakeStashItem::new()
+                .with_expiry_date(NaiveDate::from_ymd_opt(2023, 1, 2).unwrap())
+                .build()])
+            .build();
+        let product_3 = FakeProduct::new()
+            .with_stash_items(vec![FakeStashItem::new()
+                .with_expiry_date(NaiveDate::from_ymd_opt(2023, 1, 3).unwrap())
+                .build()])
+            .build();
+
+        repo.save(product_1.clone()).unwrap();
+        repo.save(product_2.clone()).unwrap();
+        repo.save(product_3.clone()).unwrap();
+
+        let found_products = repo
+            .find_expiring_in_interval(Some(NaiveDate::from_ymd_opt(2023, 1, 2).unwrap()), None)
+            .unwrap();
+
+        assert_eq!(found_products.len(), 2);
+        assert!(found_products.contains(&product_2));
+        assert!(found_products.contains(&product_3));
+    }
+
+    #[test]
+    fn test_find_expiring_in_interval_before() {
+        let repo = get_repo();
+
+        let product_1 = FakeProduct::new()
+            .with_stash_items(vec![FakeStashItem::new()
+                .with_expiry_date(NaiveDate::from_ymd_opt(2023, 1, 1).unwrap())
+                .build()])
+            .build();
+        let product_2 = FakeProduct::new()
+            .with_stash_items(vec![FakeStashItem::new()
+                .with_expiry_date(NaiveDate::from_ymd_opt(2023, 1, 2).unwrap())
+                .build()])
+            .build();
+        let product_3 = FakeProduct::new()
+            .with_stash_items(vec![FakeStashItem::new()
+                .with_expiry_date(NaiveDate::from_ymd_opt(2023, 1, 3).unwrap())
+                .build()])
+            .build();
+
+        repo.save(product_1.clone()).unwrap();
+        repo.save(product_2.clone()).unwrap();
+        repo.save(product_3.clone()).unwrap();
+
+        let found_products = repo
+            .find_expiring_in_interval(None, Some(NaiveDate::from_ymd_opt(2023, 1, 3).unwrap()))
+            .unwrap();
+
+        assert_eq!(found_products.len(), 2);
+        assert!(found_products.contains(&product_1));
+        assert!(found_products.contains(&product_2));
+    }
+
+    #[test]
+    fn test_find_expiring_in_interval_both() {
+        let repo = get_repo();
+
+        let product_1 = FakeProduct::new()
+            .with_stash_items(vec![FakeStashItem::new()
+                .with_expiry_date(NaiveDate::from_ymd_opt(2023, 1, 1).unwrap())
+                .build()])
+            .build();
+        let product_2 = FakeProduct::new()
+            .with_stash_items(vec![FakeStashItem::new()
+                .with_expiry_date(NaiveDate::from_ymd_opt(2023, 1, 2).unwrap())
+                .build()])
+            .build();
+        let product_3 = FakeProduct::new()
+            .with_stash_items(vec![FakeStashItem::new()
+                .with_expiry_date(NaiveDate::from_ymd_opt(2023, 1, 3).unwrap())
+                .build()])
+            .build();
+
+        repo.save(product_1.clone()).unwrap();
+        repo.save(product_2.clone()).unwrap();
+        repo.save(product_3.clone()).unwrap();
+
+        let found_products = repo
+            .find_expiring_in_interval(
+                Some(NaiveDate::from_ymd_opt(2023, 1, 2).unwrap()),
+                Some(NaiveDate::from_ymd_opt(2023, 1, 3).unwrap()),
+            )
+            .unwrap();
+
+        assert_eq!(found_products.len(), 1);
+        assert!(found_products.contains(&product_2));
+    }
+
+    #[test]
+    fn test_find_expiring_in_interval_none() {
+        let repo = get_repo();
+
+        let product_1 = FakeProduct::new()
+            .with_stash_items(vec![FakeStashItem::new()
+                .with_expiry_date(NaiveDate::from_ymd_opt(2023, 1, 1).unwrap())
+                .build()])
+            .build();
+
+        repo.save(product_1).unwrap();
+
+        let result = repo.find_expiring_in_interval(None, None).unwrap();
+
+        assert!(result.is_empty());
     }
 
     #[test]

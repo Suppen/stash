@@ -1,3 +1,4 @@
+use chrono::NaiveDate;
 use uuid::Uuid;
 
 use crate::domain::{entities::Product, errors::ProductRepositoryError, value_objects::ProductId};
@@ -36,6 +37,20 @@ pub trait ProductRepository: Sync + Send {
         &self,
         stash_item_id: &Uuid,
     ) -> Result<Option<Product>, ProductRepositoryError>;
+
+    /// Finds all products with at least one stash item expiring within the given date interval
+    ///
+    /// # Parameters
+    /// - `after` - The start of the date range, inclusive
+    /// - `before` - The end of the date range, exclusive
+    ///
+    /// # Returns
+    /// A list of products with at least one stash item expiring within the given date interval
+    fn find_expiring_in_interval(
+        &self,
+        after: Option<NaiveDate>,
+        before: Option<NaiveDate>,
+    ) -> Result<Vec<Product>, ProductRepositoryError>;
 
     /// Returns whether a product exists
     ///
