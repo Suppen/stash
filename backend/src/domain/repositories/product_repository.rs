@@ -4,7 +4,7 @@ use crate::domain::{entities::Product, errors::ProductRepositoryError, value_obj
 
 #[cfg_attr(test, mockall::automock)]
 pub trait ProductRepository: Sync + Send {
-    /// Returns one product by id
+    /// Gets one product by id, if it exists
     ///
     /// # Parameters
     /// * `id` - The id of the product to get
@@ -14,6 +14,16 @@ pub trait ProductRepository: Sync + Send {
     /// * `Ok(None)` if the product was not found
     /// * `Err(_)` if the repository fails to get the product
     fn find_by_id(&self, id: &ProductId) -> Result<Option<Product>, ProductRepositoryError>;
+
+    /// Gets a list of products by their ids
+    ///
+    /// # Parameters
+    /// * `ids` - The ids of the products to get
+    ///
+    /// # Returns
+    /// * `Ok(products)` if the products were found
+    /// * `Err(_)` if the repository fails to get the products
+    fn find_by_ids(&self, ids: &[ProductId]) -> Result<Vec<Product>, ProductRepositoryError>;
 
     /// Finds a product by the ID of a stash item that belongs to it
     ///

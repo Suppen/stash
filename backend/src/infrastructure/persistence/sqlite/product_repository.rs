@@ -42,6 +42,36 @@ impl ProductRepository {
         Ok(Product::new(id, brand, name, vec![]))
     }
 
+    fn find_by_ids(
+        tx: &Transaction,
+        ids: &[ProductId],
+    ) -> Result<Vec<Product>, ProductRepositoryError> {
+        // Create placeholders for the query. This becomes "?, ?, ?, ..."
+        let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>();
+
+        let mut params: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+        for id in ids {
+            let id = Box::new(id.to_string());
+            params.push(id);
+        }
+        let params = params.iter().map(|param| &**param).collect::<Vec<_>>();
+
+        let mut stmt = tx.prepare(&format!(
+            "SELECT id, brand, name FROM products WHERE id IN ({})",
+            placeholders.join(", ")
+        ))?;
+        let mut rows = stmt.query(&params[..])?;
+
+        let mut products = vec![];
+        while let Some(row) = rows.next()? {
+            let product = ProductRepository::row_to_product(row)?;
+            let product = ProductRepository::add_stash_items(tx, product)?;
+            products.push(product);
+        }
+
+        Ok(products)
+    }
+
     /// Gets a product from the database by its ID
     ///
     /// # Parameters
@@ -54,17 +84,7 @@ impl ProductRepository {
         tx: &Transaction,
         id: &ProductId,
     ) -> Result<Option<Product>, ProductRepositoryError> {
-        let mut stmt = tx.prepare("SELECT id, brand, name FROM products WHERE id = :id")?;
-        let mut rows = stmt.query(named_params! { ":id": id.value() })?;
-
-        if let Some(row) = rows.next()? {
-            let product = ProductRepository::row_to_product(row)?;
-            let product = ProductRepository::add_stash_items(tx, product)?;
-
-            Ok(Some(product))
-        } else {
-            Ok(None)
-        }
+        ProductRepository::find_by_ids(tx, &[id.clone()]).map(|mut products| products.pop())
     }
 
     /// Finds a product by the ID of one of its [`StashItem`]s
@@ -135,7 +155,7 @@ impl ProductRepository {
             },
         )?;
 
-        // Delete the product
+        // Delete the product itself
         tx.execute(
             "DELETE FROM products WHERE id = :id",
             named_params! {
@@ -280,6 +300,16 @@ impl ProductRepositoryTrait for ProductRepository {
         product
     }
 
+    fn find_by_ids(&self, ids: &[ProductId]) -> Result<Vec<Product>, ProductRepositoryError> {
+        let mut conn = self.conn();
+        let tx = conn.transaction()?;
+
+        let products = ProductRepository::find_by_ids(&tx, ids);
+
+        tx.commit()?;
+        products
+    }
+
     fn find_by_stash_item_id(
         &self,
         stash_item_id: &Uuid,
@@ -362,6 +392,28 @@ mod tests {
         let found_product = repo.find_by_id(&product_id).unwrap().unwrap();
 
         assert_eq!(found_product, product);
+    }
+
+    #[test]
+    fn test_find_by_ids() {
+        let repo = get_repo();
+
+        let product1 = FakeProduct::new().build();
+        let product1_id = product1.id().clone();
+        let product2 = FakeProduct::new().build();
+        let product2_id = product2.id().clone();
+        let product3 = FakeProduct::new().build();
+        repo.save(product1.clone()).unwrap();
+        repo.save(product2.clone()).unwrap();
+        repo.save(product3.clone()).unwrap();
+
+        let found_products = repo
+            .find_by_ids(&[product1_id.clone(), product2_id.clone()])
+            .unwrap();
+
+        assert_eq!(found_products.len(), 2);
+        assert!(found_products.contains(&product1));
+        assert!(found_products.contains(&product2));
     }
 
     #[test]
