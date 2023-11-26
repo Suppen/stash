@@ -67,6 +67,144 @@ impl ProductRepository {
         }
     }
 
+    /// Finds a product by the ID of one of its [`StashItem`]s
+    ///
+    /// # Parameters
+    /// - `tx`: The transaction to use
+    /// - `stash_item_id`: The ID of the stash item to find the product for
+    ///
+    /// # Returns
+    /// The product, if found
+    fn find_by_stash_item_id(
+        tx: &Transaction,
+        stash_item_id: &Uuid,
+    ) -> Result<Option<Product>, ProductRepositoryError> {
+        let mut stmt =
+            tx.prepare("SELECT product_id FROM stash_items WHERE id = :stash_item_id LIMIT 1")?;
+        let mut rows = stmt.query(named_params! { ":stash_item_id": stash_item_id.to_string() })?;
+
+        if let Some(row) = rows.next()? {
+            let product_id = row.get::<_, ProductId>("product_id")?;
+
+            ProductRepository::find_by_id(tx, &product_id)
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Saves a [`Product`] to the database. If the product already exists, it will be updated.
+    ///
+    /// # Parameters
+    /// - `tx`: The transaction to use
+    /// - `product`: The product to save
+    fn save_product(tx: &Transaction, product: Product) -> Result<(), ProductRepositoryError> {
+        // Save the product itself
+        tx.execute(
+            "INSERT INTO products (id, brand, name, created_at) VALUES (:id, :brand, :name, :now) ON CONFLICT(id) DO UPDATE SET brand = :brand, name = :name, updated_at = :now",
+            named_params! {
+                ":id": product.id(),
+                ":brand": product.brand(),
+                ":name": product.name(),
+                ":now": chrono::Utc::now().naive_utc(),
+            },
+        )?;
+
+        // Delete all stash items no longer in the product
+        ProductRepository::delete_deleted_stash_items(tx, &product)?;
+
+        // Create and update all stash items
+        ProductRepository::save_stash_items(tx, &product)?;
+
+        Ok(())
+    }
+
+    /// Deletes a product from the database, along with all its stash items
+    ///
+    /// # Parameters
+    /// - `tx`: The transaction to use
+    /// - `product_id`: ID of the product to delete
+    fn delete_product(
+        tx: &Transaction,
+        product_id: &ProductId,
+    ) -> Result<(), ProductRepositoryError> {
+        // Delete all stash items related to the product
+        tx.execute(
+            "DELETE FROM stash_items WHERE product_id = :product_id",
+            named_params! {
+                ":product_id": product_id,
+            },
+        )?;
+
+        // Delete the product
+        tx.execute(
+            "DELETE FROM products WHERE id = :id",
+            named_params! {
+                ":id": product_id,
+            },
+        )?;
+
+        Ok(())
+    }
+
+    /// Deletes all [`StashItem`]s from the database that are no longer in the passed [`Product`]
+    ///
+    /// # Parameters
+    /// - `tx`: The transaction to use
+    /// - `product`: The product to delete the stash items from
+    fn delete_deleted_stash_items(
+        tx: &Transaction,
+        product: &Product,
+    ) -> Result<(), ProductRepositoryError> {
+        // Create placeholders for the query. This becomes "?, ?, ?, ..."
+        let placeholders = product
+            .stash_items()
+            .iter()
+            .map(|_| "?")
+            .collect::<Vec<_>>();
+
+        // Make the list of parameters to pass to the query. This becomes [product_id, stash_item_id1, stash_item_id2, ...]
+        let mut params: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+        params.push(Box::new(product.id()));
+        for stash_item in product.stash_items() {
+            let id = Box::new(stash_item.id().to_string());
+            params.push(id);
+        }
+        let params = params.iter().map(|param| &**param).collect::<Vec<_>>();
+
+        // Delete all stash items no longer in the product
+        tx.execute(
+            &format!(
+                "DELETE FROM stash_items WHERE product_id = ? AND id NOT IN ({})",
+                placeholders.join(", ")
+            ),
+            &params[..],
+        )?;
+
+        Ok(())
+    }
+
+    /// Saves all [`StashItem`]s for a given [`Product`] to the database, updating existing ones
+    /// and creating new ones
+    ///
+    /// # Parameters
+    /// - `tx`: The transaction to use
+    /// - `product`: The product to save the stash items for
+    fn save_stash_items(tx: &Transaction, product: &Product) -> Result<(), ProductRepositoryError> {
+        for stash_item in product.stash_items() {
+            tx.execute(
+            "INSERT INTO stash_items (id, product_id, quantity, expiry_date, created_at) VALUES (:id, :product_id, :quantity, :expiry_date, :now) ON CONFLICT(id) DO UPDATE SET quantity = :quantity, expiry_date = :expiry_date, updated_at = :now"
+            , named_params! {
+                ":id": stash_item.id().to_string(),
+                ":product_id": product.id(),
+                ":quantity": stash_item.quantity(),
+                ":expiry_date": stash_item.expiry_date(),
+                ":now": chrono::Utc::now().naive_utc(),
+            })?;
+        }
+
+        Ok(())
+    }
+
     /// Converts a row into a [`StashItem`]
     ///
     /// # Errors
@@ -82,6 +220,13 @@ impl ProductRepository {
     }
 
     /// Gets all [`StashItem`]s for a given [`Product`]
+    ///
+    /// # Parameters
+    /// - `tx`: The transaction to use
+    /// - `product_id`: The ID of the product to get the stash items for
+    ///
+    /// # Returns
+    /// A vector of all [`StashItem`]s for the given [`Product`]
     fn get_stash_items(
         tx: &Transaction,
         product_id: &ProductId,
@@ -101,6 +246,13 @@ impl ProductRepository {
     }
 
     /// Fetches and adds all [`StashItem`]s for a given [`Product`] to the [`Product`]
+    ///
+    /// # Parameters
+    /// - `tx`: The transaction to use
+    /// - `product`: The product to add the stash items to
+    ///
+    /// # Returns
+    /// The product with the stash items added
     fn add_stash_items(
         tx: &Transaction,
         mut product: Product,
@@ -122,7 +274,10 @@ impl ProductRepositoryTrait for ProductRepository {
         let mut conn = self.conn();
         let tx = conn.transaction()?;
 
-        ProductRepository::find_by_id(&tx, id)
+        let product = ProductRepository::find_by_id(&tx, id);
+
+        tx.commit()?;
+        product
     }
 
     fn find_by_stash_item_id(
@@ -132,87 +287,31 @@ impl ProductRepositoryTrait for ProductRepository {
         let mut conn = self.conn();
         let tx = conn.transaction()?;
 
-        let mut stmt =
-            tx.prepare("SELECT product_id FROM stash_items WHERE id = :stash_item_id LIMIT 1")?;
-        let mut rows = stmt.query(named_params! { ":stash_item_id": stash_item_id.to_string() })?;
+        let result = ProductRepository::find_by_stash_item_id(&tx, stash_item_id);
 
-        if let Some(row) = rows.next()? {
-            let product_id = row.get::<_, ProductId>("product_id")?;
-
-            ProductRepository::find_by_id(&tx, &product_id)
-        } else {
-            Ok(None)
-        }
+        tx.commit()?;
+        result
     }
 
     fn exists_by_id(&self, id: &ProductId) -> Result<bool, ProductRepositoryError> {
-        let conn = self.conn();
-        let mut stmt = conn.prepare("SELECT COUNT(*) FROM products WHERE id = :id LIMIT 1")?;
-        let mut rows = stmt.query(named_params! { ":id": id.value() })?;
+        let mut conn = self.conn();
+        let tx = conn.transaction()?;
 
-        if let Some(row) = rows.next()? {
-            let count: i64 = row.get(0)?;
+        let exists = match ProductRepository::find_by_id(&tx, id)? {
+            Some(_) => Ok(true),
+            None => Ok(false),
+        };
 
-            Ok(count > 0)
-        } else {
-            Ok(false)
-        }
+        tx.commit()?;
+        exists
     }
 
     fn save(&self, product: Product) -> Result<(), ProductRepositoryError> {
         let mut conn = self.conn();
-
-        // Make a transaction
         let tx = conn.transaction()?;
 
-        // Save the product
-        tx.execute(
-            "INSERT INTO products (id, brand, name, created_at) VALUES (:id, :brand, :name, :now) ON CONFLICT(id) DO UPDATE SET brand = :brand, name = :name, updated_at = :now",
-            named_params! {
-                ":id": product.id(),
-                ":brand": product.brand(),
-                ":name": product.name(),
-                ":now": chrono::Utc::now().naive_utc(),
-            },
-        )?;
+        ProductRepository::save_product(&tx, product)?;
 
-        // Delete all stash items no longer in the product
-        let placeholders = product
-            .stash_items()
-            .iter()
-            .map(|_| "?")
-            .collect::<Vec<_>>();
-
-        let mut params: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
-        params.push(Box::new(product.id()));
-        for stash_item in product.stash_items() {
-            let id = Box::new(stash_item.id().to_string());
-            params.push(id);
-        }
-        let params = params.iter().map(|param| &**param).collect::<Vec<_>>();
-
-        tx.execute(
-            &format!(
-                "DELETE FROM stash_items WHERE product_id = ? AND id NOT IN ({})",
-                placeholders.join(", ")
-            ),
-            &params[..],
-        )?;
-
-        // Create and update all stash items
-        for stash_item in product.stash_items() {
-            tx.execute(
-            "INSERT INTO stash_items (id, product_id, quantity, expiry_date, created_at) VALUES (:id, :product_id, :quantity, :expiry_date, :now) ON CONFLICT(id) DO UPDATE SET quantity = :quantity, expiry_date = :expiry_date, updated_at = :now"
-            , named_params! {
-                ":id": stash_item.id().to_string(),
-                ":product_id": product.id(),
-                ":quantity": stash_item.quantity(),
-                ":expiry_date": stash_item.expiry_date(),
-                ":now": chrono::Utc::now().naive_utc(),
-            })?;
-        }
-
-        // Commit the transaction
         tx.commit()?;
 
         Ok(())
@@ -220,25 +319,9 @@ impl ProductRepositoryTrait for ProductRepository {
 
     fn delete_by_id(&self, id: &ProductId) -> Result<(), ProductRepositoryError> {
         let mut conn = self.conn();
-
-        // Make a transaction
         let tx = conn.transaction()?;
 
-        // Delete all stash items related to the product
-        tx.execute(
-            "DELETE FROM stash_items WHERE product_id = :product_id",
-            named_params! {
-                ":product_id": id,
-            },
-        )?;
-
-        // Delete the product
-        tx.execute(
-            "DELETE FROM products WHERE id = :id",
-            named_params! {
-                ":id": id,
-            },
-        )?;
+        ProductRepository::delete_product(&tx, id)?;
 
         // Commit the transaction
         tx.commit()?;
