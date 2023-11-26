@@ -110,6 +110,31 @@ impl ProductRepositoryTrait for ProductRepository {
         }
     }
 
+    fn find_by_stash_item_id(
+        &self,
+        stash_item_id: &Uuid,
+    ) -> Result<Option<Product>, ProductRepositoryError> {
+        let conn = self.conn();
+        let mut stmt =
+            conn.prepare("SELECT product_id FROM stash_items WHERE id = :stash_item_id LIMIT 1")?;
+        let mut rows = stmt.query(named_params! { ":stash_item_id": stash_item_id.to_string() })?;
+
+        let row = rows.next()?;
+
+        if let Some(row) = row {
+            let product_id = row.get::<_, ProductId>("product_id")?;
+
+            // Release the connection, or we get a deadlock
+            drop(rows);
+            drop(stmt);
+            drop(conn);
+
+            self.find_by_id(&product_id)
+        } else {
+            Ok(None)
+        }
+    }
+
     fn exists_by_id(&self, id: &ProductId) -> Result<bool, ProductRepositoryError> {
         let conn = self.conn();
         let mut stmt = conn.prepare("SELECT COUNT(*) FROM products WHERE id = :id LIMIT 1")?;
@@ -257,6 +282,22 @@ mod tests {
         let found_product = repo.find_by_id(&product_id).unwrap();
 
         assert!(found_product.is_none());
+    }
+
+    #[test]
+    fn test_find_by_stash_item_id() {
+        let repo = get_repo();
+
+        let stash_item = FakeStashItem::new().build();
+        let stash_item_id = stash_item.id().clone();
+        let product = FakeProduct::new()
+            .with_stash_items(vec![stash_item])
+            .build();
+        repo.save(product.clone()).unwrap();
+
+        let found_product = repo.find_by_stash_item_id(&stash_item_id).unwrap().unwrap();
+
+        assert_eq!(found_product, product);
     }
 
     #[test]

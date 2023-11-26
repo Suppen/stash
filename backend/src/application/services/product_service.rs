@@ -2,8 +2,8 @@ use std::{collections::HashSet, sync::Arc};
 
 use crate::{
     application::use_cases::{
-        AddStashItem, CreateProduct, DeleteProduct, DeleteStashItem, GetProduct, GetStashItems,
-        UpdateProduct, UpdateStashItem,
+        AddStashItem, CreateProduct, DeleteProduct, DeleteStashItem, GetProduct,
+        GetProductByStashItemId, GetStashItems, UpdateProduct, UpdateStashItem,
     },
     domain::{
         entities::{Product, StashItem},
@@ -173,6 +173,15 @@ impl GetStashItems for ProductService {
             .collect();
 
         Ok(stash_items)
+    }
+}
+
+impl GetProductByStashItemId for ProductService {
+    fn get_product_by_stash_item_id(
+        &self,
+        stash_item_id: &uuid::Uuid,
+    ) -> Result<Option<Product>, ProductRepositoryError> {
+        self.product_repository.find_by_stash_item_id(stash_item_id)
     }
 }
 
@@ -452,5 +461,29 @@ mod tests {
         for stash_item in expected_stash_items {
             assert!(stash_items.contains(&stash_item));
         }
+    }
+
+    #[test]
+    fn test_get_product_by_stash_item_id() {
+        let stash_item = FakeStashItem::new().build();
+        let stash_item_id = stash_item.id().clone();
+        let product = FakeProduct::new()
+            .with_stash_items(vec![stash_item])
+            .build();
+        let returned_product = product.clone();
+
+        let mut product_repository = MockProductRepository::new();
+        product_repository
+            .expect_find_by_stash_item_id()
+            .with(eq(stash_item_id.clone()))
+            .returning(move |_| Ok(Some(returned_product.clone())));
+
+        let product_service = ProductService::new(Arc::new(Box::new(product_repository)));
+
+        let result = product_service.get_product_by_stash_item_id(&stash_item_id);
+
+        let found_product = result.unwrap().unwrap();
+
+        assert_eq!(found_product, product);
     }
 }

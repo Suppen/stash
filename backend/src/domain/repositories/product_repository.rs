@@ -1,3 +1,5 @@
+use uuid::Uuid;
+
 use crate::domain::{entities::Product, errors::ProductRepositoryError, value_objects::ProductId};
 
 #[cfg_attr(test, mockall::automock)]
@@ -12,6 +14,18 @@ pub trait ProductRepository: Sync + Send {
     /// * `Ok(None)` if the product was not found
     /// * `Err(_)` if the repository fails to get the product
     fn find_by_id(&self, id: &ProductId) -> Result<Option<Product>, ProductRepositoryError>;
+
+    /// Finds a product by the ID of a stash item that belongs to it
+    ///
+    /// # Parameters
+    /// - `stash_item_id` - ID of the stash item
+    ///
+    /// # Returns
+    /// The product that the stash item belongs to, if it exists
+    fn find_by_stash_item_id(
+        &self,
+        stash_item_id: &Uuid,
+    ) -> Result<Option<Product>, ProductRepositoryError>;
 
     /// Returns whether a product exists
     ///
