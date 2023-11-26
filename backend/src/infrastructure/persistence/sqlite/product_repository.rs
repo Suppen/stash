@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use chrono::NaiveDate;
-use rusqlite::{named_params, Connection};
+use rusqlite::{named_params, Connection, Transaction};
 use uuid::Uuid;
 
 use crate::domain::{
@@ -42,6 +42,31 @@ impl ProductRepository {
         Ok(Product::new(id, brand, name, vec![]))
     }
 
+    /// Gets a product from the database by its ID
+    ///
+    /// # Parameters
+    /// - `id`: The ID of the product to get
+    ///
+    /// # Returns
+    /// The product, if found
+    /// An error if the product could not be found
+    fn find_by_id(
+        tx: &Transaction,
+        id: &ProductId,
+    ) -> Result<Option<Product>, ProductRepositoryError> {
+        let mut stmt = tx.prepare("SELECT id, brand, name FROM products WHERE id = :id")?;
+        let mut rows = stmt.query(named_params! { ":id": id.value() })?;
+
+        if let Some(row) = rows.next()? {
+            let product = ProductRepository::row_to_product(row)?;
+            let product = ProductRepository::add_stash_items(tx, product)?;
+
+            Ok(Some(product))
+        } else {
+            Ok(None)
+        }
+    }
+
     /// Converts a row into a [`StashItem`]
     ///
     /// # Errors
@@ -58,10 +83,10 @@ impl ProductRepository {
 
     /// Gets all [`StashItem`]s for a given [`Product`]
     fn get_stash_items(
-        connection: &Connection,
+        tx: &Transaction,
         product_id: &ProductId,
     ) -> Result<Vec<StashItem>, ProductRepositoryError> {
-        let mut stmt = connection.prepare(
+        let mut stmt = tx.prepare(
             "SELECT id, quantity, expiry_date FROM stash_items WHERE product_id = :product_id",
         )?;
         let mut rows = stmt.query(named_params! { ":product_id": product_id })?;
@@ -77,10 +102,10 @@ impl ProductRepository {
 
     /// Fetches and adds all [`StashItem`]s for a given [`Product`] to the [`Product`]
     fn add_stash_items(
-        connection: &Connection,
+        tx: &Transaction,
         mut product: Product,
     ) -> Result<Product, ProductRepositoryError> {
-        let stash_items = ProductRepository::get_stash_items(connection, product.id())?;
+        let stash_items = ProductRepository::get_stash_items(&tx, product.id())?;
 
         stash_items.into_iter().for_each(|stash_item| {
             product.add_stash_item(stash_item).expect(
@@ -94,42 +119,27 @@ impl ProductRepository {
 
 impl ProductRepositoryTrait for ProductRepository {
     fn find_by_id(&self, id: &ProductId) -> Result<Option<Product>, ProductRepositoryError> {
-        let conn = self.conn();
-        let mut stmt =
-            conn.prepare("SELECT id, brand, name FROM products WHERE id = :id LIMIT 1")?;
-        let mut rows = stmt.query(named_params! { ":id": id.value() })?;
+        let mut conn = self.conn();
+        let tx = conn.transaction()?;
 
-        let row = rows.next()?;
-
-        if let Some(row) = row {
-            let product = ProductRepository::row_to_product(row)?;
-
-            ProductRepository::add_stash_items(&conn, product).map(Some)
-        } else {
-            Ok(None)
-        }
+        ProductRepository::find_by_id(&tx, id)
     }
 
     fn find_by_stash_item_id(
         &self,
         stash_item_id: &Uuid,
     ) -> Result<Option<Product>, ProductRepositoryError> {
-        let conn = self.conn();
+        let mut conn = self.conn();
+        let tx = conn.transaction()?;
+
         let mut stmt =
-            conn.prepare("SELECT product_id FROM stash_items WHERE id = :stash_item_id LIMIT 1")?;
+            tx.prepare("SELECT product_id FROM stash_items WHERE id = :stash_item_id LIMIT 1")?;
         let mut rows = stmt.query(named_params! { ":stash_item_id": stash_item_id.to_string() })?;
 
-        let row = rows.next()?;
-
-        if let Some(row) = row {
+        if let Some(row) = rows.next()? {
             let product_id = row.get::<_, ProductId>("product_id")?;
 
-            // Release the connection, or we get a deadlock
-            drop(rows);
-            drop(stmt);
-            drop(conn);
-
-            self.find_by_id(&product_id)
+            ProductRepository::find_by_id(&tx, &product_id)
         } else {
             Ok(None)
         }
@@ -140,9 +150,7 @@ impl ProductRepositoryTrait for ProductRepository {
         let mut stmt = conn.prepare("SELECT COUNT(*) FROM products WHERE id = :id LIMIT 1")?;
         let mut rows = stmt.query(named_params! { ":id": id.value() })?;
 
-        let row = rows.next()?;
-
-        if let Some(row) = row {
+        if let Some(row) = rows.next()? {
             let count: i64 = row.get(0)?;
 
             Ok(count > 0)
