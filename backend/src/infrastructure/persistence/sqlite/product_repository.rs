@@ -129,10 +129,11 @@ impl ProductRepository {
         after: Option<NaiveDate>,
         before: Option<NaiveDate>,
     ) -> Result<Vec<Product>, ProductRepositoryError> {
-        // Make and execute the statement
+        // Hold the query and args for it outside of the match to ensure their lifetime is long enough
         let mut query = String::from("SELECT DISTINCT product_id FROM stash_items WHERE ");
         let mut args: Vec<Box<dyn ToSql>> = Vec::new();
 
+        // Build the query
         match (after, before) {
             (Some(after), Some(before)) => {
                 query.push_str("expiry_date >= ? AND expiry_date < ?");
@@ -147,12 +148,12 @@ impl ProductRepository {
                 query.push_str("expiry_date < ?");
                 args.push(Box::new(before.to_string()));
             }
-            // TODO Error
             (None, None) => {
-                return Ok(vec![]);
+                return Err(ProductRepositoryError::InvalidDateInterval);
             }
         };
 
+        // Convert the args to something the query can use
         let args = args.iter().map(|arg| &**arg).collect::<Vec<_>>();
 
         let product_ids = tx
@@ -625,9 +626,12 @@ mod tests {
 
         repo.save(product_1).unwrap();
 
-        let result = repo.find_expiring_in_interval(None, None).unwrap();
+        let result = repo.find_expiring_in_interval(None, None);
 
-        assert!(result.is_empty());
+        assert_eq!(
+            result.unwrap_err(),
+            ProductRepositoryError::InvalidDateInterval
+        );
     }
 
     #[test]

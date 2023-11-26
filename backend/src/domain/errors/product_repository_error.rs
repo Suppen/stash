@@ -26,6 +26,8 @@ pub enum ProductRepositoryError {
     StashItemExists,
     /// The stash item does not exist
     StashItemNotFound,
+    /// The provided date interval is invalid
+    InvalidDateInterval,
     /// Error related to the implementation of the repository
     PersisteneError(String),
 }
@@ -47,6 +49,7 @@ impl std::fmt::Display for ProductRepositoryError {
             ProductRepositoryError::ProductNotFound => write!(f, "Product not found"),
             ProductRepositoryError::StashItemExists => write!(f, "Stash item already exists"),
             ProductRepositoryError::StashItemNotFound => write!(f, "Stash item not found"),
+            ProductRepositoryError::InvalidDateInterval => write!(f, "Invalid date interval"),
             ProductRepositoryError::PersisteneError(error) => write!(f, "{}", error),
         }
     }
