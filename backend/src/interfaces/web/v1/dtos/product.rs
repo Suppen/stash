@@ -70,7 +70,7 @@ mod tests {
                 StashItemDTO {
                     id: Uuid::new_v4().to_string(),
                     quantity: 5,
-                    expiry_date: "2021-01-01".to_string(),
+                    expiry_date: "2021-01-02".to_string(),
                 },
             ],
         };

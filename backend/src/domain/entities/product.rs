@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
+use chrono::NaiveDate;
 use getset::{Getters, Setters};
 use uuid::Uuid;
 
@@ -55,6 +56,19 @@ impl Product {
         product
     }
 
+    /// Gets an item with the given expiry date, if one exists
+    ///
+    /// # Arguments
+    /// * `expiry_date` - Expiry date of the item to get
+    ///
+    /// # Returns
+    /// * The item with the given expiry date, if one exists
+    fn stash_item_with_expiry_date(&self, expiry_date: &NaiveDate) -> Option<&StashItem> {
+        self.stash_items
+            .values()
+            .find(|item| item.expiry_date() == expiry_date)
+    }
+
     /// Gets the list of stash items associated with the product. Note: No order is guaranteed.
     ///
     /// # Returns
@@ -99,7 +113,10 @@ impl Product {
             return Err(StashItemExistsError);
         }
 
-        // TODO Check if a stash item with the same expiry date already exists
+        if let Some(_) = self.stash_item_with_expiry_date(stash_item.expiry_date()) {
+            // TODO Other error type
+            return Err(StashItemExistsError);
+        }
 
         self.stash_items.insert(stash_item.id().clone(), stash_item);
 
@@ -136,7 +153,11 @@ impl Product {
         &mut self,
         stash_item: StashItem,
     ) -> Result<(), StashItemDoesntExistError> {
-        // TODO Check if a stash item with the same expiry date already exists
+        match self.stash_item_with_expiry_date(stash_item.expiry_date()) {
+            // TODO Other error type
+            Some(_) => return Err(StashItemDoesntExistError),
+            None => (),
+        }
 
         self.remove_stash_item(stash_item.id())?;
         self.add_stash_item(stash_item)
@@ -154,7 +175,10 @@ impl Entity<ProductId> for Product {
 
 #[cfg(test)]
 mod tests {
-    use crate::domain::entities::{FakeProduct, FakeStashItem};
+    use crate::domain::{
+        entities::{FakeProduct, FakeStashItem},
+        value_objects::Quantity,
+    };
 
     use super::*;
 
@@ -247,6 +271,25 @@ mod tests {
     }
 
     #[test]
+    fn test_add_stash_item_existing_expiry_date() {
+        let expiry_date = NaiveDate::from_ymd_opt(2023, 11, 26).unwrap();
+        let mut product = FakeProduct::new()
+            .with_stash_items(vec![FakeStashItem::new()
+                .with_expiry_date(expiry_date.clone())
+                .build()])
+            .build();
+
+        let result = product.add_stash_item(
+            FakeStashItem::new()
+                .with_expiry_date(expiry_date.clone())
+                .build(),
+        );
+
+        // TODO Check error type
+        assert!(result.is_err());
+    }
+
+    #[test]
     fn test_remove_stash_item() {
         let stash_item = FakeStashItem::new().build();
         let mut product = FakeProduct::new()
@@ -267,7 +310,7 @@ mod tests {
     }
 
     #[test]
-    fn test_replace_stash_item() {
+    fn test_update_stash_item() {
         let stash_item_1 = FakeStashItem::new().build();
         let mut product = FakeProduct::new()
             .with_stash_items(vec![stash_item_1.clone()])
@@ -283,12 +326,36 @@ mod tests {
     }
 
     #[test]
-    fn test_replace_stash_item_doesnt_exist() {
+    fn test_update_stash_item_doesnt_exist() {
         let mut product = FakeProduct::new().build();
         let stash_item = FakeStashItem::new().build();
         let result = product.update_stash_item(stash_item.clone());
 
         assert!(result.is_err());
         assert!(!product.stash_items().contains(&&stash_item));
+    }
+
+    #[test]
+    fn test_update_stash_item_existing_expiry_date() {
+        let stash_item_id = Uuid::new_v4();
+        let expiry_date = NaiveDate::from_ymd_opt(2023, 11, 26).unwrap();
+        let mut product = FakeProduct::new()
+            .with_stash_items(vec![FakeStashItem::new()
+                .with_id(stash_item_id.clone())
+                .with_expiry_date(expiry_date.clone())
+                .with_quantity(Quantity::new(2).unwrap())
+                .build()])
+            .build();
+
+        let result = product.update_stash_item(
+            FakeStashItem::new()
+                .with_id(stash_item_id.clone())
+                .with_expiry_date(expiry_date.clone())
+                .with_quantity(Quantity::new(3).unwrap())
+                .build(),
+        );
+
+        // TODO Check error type
+        assert!(result.is_err());
     }
 }
