@@ -51,6 +51,8 @@ impl TryFrom<ProductDTO> for Product {
 mod tests {
     use uuid::Uuid;
 
+    use crate::domain::entities::FakeProduct;
+
     use super::*;
 
     #[test]
@@ -102,28 +104,9 @@ mod tests {
 
     #[test]
     fn test_product_try_from_dto() {
-        let expected_product = Product::new(
-            "1".parse().unwrap(),
-            "brand".parse().unwrap(),
-            "name",
-            vec![
-                StashItem::new(
-                    Uuid::new_v4(),
-                    3.try_into().unwrap(),
-                    "2021-01-01".parse().unwrap(),
-                ),
-                StashItem::new(
-                    Uuid::new_v4(),
-                    5.try_into().unwrap(),
-                    "2021-01-01".parse().unwrap(),
-                ),
-            ],
-        );
-
+        let expected_product = FakeProduct::new().build();
         let dto = ProductDTO::from(expected_product.clone());
-
         let product = Product::try_from(dto).unwrap();
-
         assert_eq!(product, expected_product);
     }
 

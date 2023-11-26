@@ -218,7 +218,11 @@ impl ProductRepositoryTrait for ProductRepository {
 mod tests {
     use super::*;
     use crate::{
-        domain::value_objects::ProductId, infrastructure::persistence::sqlite::db::setup_db,
+        domain::{
+            entities::{FakeProduct, FakeStashItem},
+            value_objects::ProductId,
+        },
+        infrastructure::persistence::sqlite::db::setup_db,
     };
 
     fn get_repo() -> ProductRepository {
@@ -235,18 +239,8 @@ mod tests {
     fn test_find_by_id() {
         let repo = get_repo();
 
-        let product_id: ProductId = "ID".parse().unwrap();
-        let product = Product::new(
-            product_id.clone(),
-            "BRAND".parse().unwrap(),
-            "NAME",
-            vec![StashItem::new(
-                Uuid::new_v4(),
-                1.try_into().unwrap(),
-                NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-            )],
-        );
-
+        let product = FakeProduct::new().build();
+        let product_id = product.id().clone();
         repo.save(product.clone()).unwrap();
 
         let found_product = repo.find_by_id(&product_id).unwrap().unwrap();
@@ -299,18 +293,8 @@ mod tests {
     fn test_save_new() {
         let repo = get_repo();
 
-        let product_id: ProductId = "ID".parse().unwrap();
-        let product = Product::new(
-            product_id.clone(),
-            "BRAND".parse().unwrap(),
-            "NAME",
-            vec![StashItem::new(
-                Uuid::new_v4(),
-                1.try_into().unwrap(),
-                NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-            )],
-        );
-
+        let product = FakeProduct::new().build();
+        let product_id = product.id().clone();
         repo.save(product.clone()).unwrap();
 
         let found_product = repo.find_by_id(&product_id).unwrap().unwrap();
@@ -322,18 +306,8 @@ mod tests {
     fn test_save_update() {
         let repo = get_repo();
 
-        let product_id: ProductId = "ID".parse().unwrap();
-        let mut product = Product::new(
-            product_id.clone(),
-            "BRAND".parse().unwrap(),
-            "NAME",
-            vec![StashItem::new(
-                Uuid::new_v4(),
-                1.try_into().unwrap(),
-                NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-            )],
-        );
-
+        let mut product = FakeProduct::new().build();
+        let product_id = product.id().clone();
         repo.save(product.clone()).unwrap();
 
         product.set_name("NEW NAME".to_string());
@@ -349,18 +323,8 @@ mod tests {
     fn test_save_update_add_stash_item() {
         let repo = get_repo();
 
-        let product_id: ProductId = "ID".parse().unwrap();
-        let mut product = Product::new(
-            product_id.clone(),
-            "BRAND".parse().unwrap(),
-            "NAME",
-            vec![StashItem::new(
-                Uuid::new_v4(),
-                1.try_into().unwrap(),
-                NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-            )],
-        );
-
+        let mut product = FakeProduct::new().build();
+        let product_id = product.id().clone();
         repo.save(product.clone()).unwrap();
 
         product
@@ -382,25 +346,11 @@ mod tests {
     fn test_save_update_remove_stash_item() {
         let repo = get_repo();
 
-        let product_id: ProductId = "ID".parse().unwrap();
         let stash_item_id = Uuid::new_v4();
-        let mut product = Product::new(
-            product_id.clone(),
-            "BRAND".parse().unwrap(),
-            "NAME",
-            vec![
-                StashItem::new(
-                    stash_item_id,
-                    1.try_into().unwrap(),
-                    NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-                ),
-                StashItem::new(
-                    Uuid::new_v4(),
-                    2.try_into().unwrap(),
-                    NaiveDate::from_ymd_opt(2021, 1, 2).unwrap(),
-                ),
-            ],
-        );
+        let mut product = FakeProduct::new()
+            .with_stash_items(vec![FakeStashItem::new().with_id(stash_item_id).build()])
+            .build();
+        let product_id = product.id().clone();
 
         repo.save(product.clone()).unwrap();
 
@@ -417,26 +367,15 @@ mod tests {
     fn test_save_all() {
         let repo = get_repo();
 
-        let product_id: ProductId = "ID".parse().unwrap();
         let stash_item_to_remove = Uuid::new_v4();
         let stash_item_to_update = Uuid::new_v4();
-        let mut product = Product::new(
-            product_id.clone(),
-            "BRAND".parse().unwrap(),
-            "NAME",
-            vec![
-                StashItem::new(
-                    stash_item_to_remove,
-                    1.try_into().unwrap(),
-                    NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-                ),
-                StashItem::new(
-                    stash_item_to_update,
-                    2.try_into().unwrap(),
-                    NaiveDate::from_ymd_opt(2021, 1, 2).unwrap(),
-                ),
-            ],
-        );
+        let mut product = FakeProduct::new()
+            .with_stash_items(vec![
+                FakeStashItem::new().with_id(stash_item_to_remove).build(),
+                FakeStashItem::new().with_id(stash_item_to_update).build(),
+            ])
+            .build();
+        let product_id = product.id().clone();
 
         repo.save(product.clone()).unwrap();
 
@@ -469,18 +408,8 @@ mod tests {
     fn test_delete_by_id() {
         let repo = get_repo();
 
-        let product_id: ProductId = "ID".parse().unwrap();
-        let product = Product::new(
-            product_id.clone(),
-            "BRAND".parse().unwrap(),
-            "NAME",
-            vec![StashItem::new(
-                Uuid::new_v4(),
-                1.try_into().unwrap(),
-                NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-            )],
-        );
-
+        let product = FakeProduct::new().build();
+        let product_id = product.id().clone();
         repo.save(product.clone()).unwrap();
 
         repo.delete_by_id(&product_id).unwrap();

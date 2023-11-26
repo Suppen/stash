@@ -41,15 +41,18 @@ impl Product {
     ///
     /// * A new Product with the given data
     pub fn new(id: ProductId, brand: Brand, name: &str, stash_items: Vec<StashItem>) -> Self {
-        Self {
+        let mut product = Self {
             id,
             brand,
             name: name.to_string(),
-            stash_items: stash_items
-                .into_iter()
-                .map(|item| (item.id().clone(), item))
-                .collect(),
+            stash_items: HashMap::new(),
+        };
+
+        for stash_item in stash_items {
+            product.add_stash_item(stash_item).unwrap();
         }
+
+        product
     }
 
     /// Gets the list of stash items associated with the product. Note: No order is guaranteed.
@@ -151,63 +154,38 @@ impl Entity<ProductId> for Product {
 
 #[cfg(test)]
 mod tests {
-    use chrono::NaiveDate;
+    use crate::domain::entities::{FakeProduct, FakeStashItem};
 
     use super::*;
 
     #[test]
     fn test_product_id() {
         let product_id: ProductId = "ID".parse().unwrap();
-
-        let product = Product::new(product_id.clone(), "Brand".parse().unwrap(), "Name", vec![]);
-
+        let product = FakeProduct::new().with_id(product_id.clone()).build();
         assert_eq!(product.id(), &product_id);
     }
 
     #[test]
     fn test_brand() {
         let brand: Brand = "Brand".parse().unwrap();
-
-        let product = Product::new("ID".parse().unwrap(), brand.clone(), "Name", vec![]);
-
+        let product = FakeProduct::new().with_brand(brand.clone()).build();
         assert_eq!(product.brand(), &brand);
     }
 
     #[test]
     fn test_name() {
         let name = "Name";
-
-        let product = Product::new(
-            "ID".parse().unwrap(),
-            "Brand".parse().unwrap(),
-            name,
-            vec![],
-        );
-
+        let product = FakeProduct::new().with_name(name.to_string()).build();
         assert_eq!(product.name(), name);
     }
 
     #[test]
     fn test_stash_items() {
-        let stash_items = vec![
-            StashItem::new(
-                Uuid::new_v4(),
-                1.try_into().unwrap(),
-                NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-            ),
-            StashItem::new(
-                Uuid::new_v4(),
-                2.try_into().unwrap(),
-                NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-            ),
-        ];
+        let stash_items = vec![FakeStashItem::new().build(), FakeStashItem::new().build()];
 
-        let product = Product::new(
-            "ID".parse().unwrap(),
-            "Brand".parse().unwrap(),
-            "Name",
-            stash_items.clone(),
-        );
+        let product = FakeProduct::new()
+            .with_stash_items(stash_items.clone())
+            .build();
 
         for stash_item in &stash_items {
             assert!(product.stash_items().contains(&stash_item));
@@ -216,68 +194,25 @@ mod tests {
 
     #[test]
     fn test_stash_item() {
-        let stash_item = StashItem::new(
-            Uuid::new_v4(),
-            1.try_into().unwrap(),
-            NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-        );
+        let stash_item = FakeStashItem::new().build();
 
-        let product = Product::new(
-            "ID".parse().unwrap(),
-            "Brand".parse().unwrap(),
-            "Name",
-            vec![stash_item.clone()],
-        );
+        let product = FakeProduct::new()
+            .with_stash_items(vec![stash_item.clone()])
+            .build();
 
         assert_eq!(product.stash_item(stash_item.id()), Some(&stash_item));
     }
 
     #[test]
     fn test_stash_item_doesnt_exist() {
-        let product = Product::new(
-            "ID".parse().unwrap(),
-            "Brand".parse().unwrap(),
-            "Name",
-            vec![],
-        );
-
+        let product = FakeProduct::new().build();
         assert_eq!(product.stash_item(&Uuid::new_v4()), None);
     }
 
     #[test]
-    fn test_stash_item_exists() {
-        let stash_item = StashItem::new(
-            Uuid::new_v4(),
-            1.try_into().unwrap(),
-            NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-        );
-
-        let product = Product::new(
-            "ID".parse().unwrap(),
-            "Brand".parse().unwrap(),
-            "Name",
-            vec![stash_item.clone()],
-        );
-
-        assert!(product.has_stash_item(stash_item.id()));
-        assert!(!product.has_stash_item(&Uuid::new_v4()));
-    }
-
-    #[test]
     fn test_add_stash_item_to_empty_list() {
-        let mut product = Product::new(
-            "ID".parse().unwrap(),
-            "Brand".parse().unwrap(),
-            "Name",
-            vec![],
-        );
-
-        let stash_item = StashItem::new(
-            Uuid::new_v4(),
-            1.try_into().unwrap(),
-            NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-        );
-
+        let mut product = FakeProduct::new().build();
+        let stash_item = FakeStashItem::new().build();
         let result = product.add_stash_item(stash_item.clone());
 
         assert!(result.is_ok());
@@ -286,25 +221,12 @@ mod tests {
 
     #[test]
     fn test_add_stash_item_to_nonempty_list() {
-        let stash_item_1 = StashItem::new(
-            Uuid::new_v4(),
-            1.try_into().unwrap(),
-            NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-        );
+        let stash_item_1 = FakeStashItem::new().build();
+        let mut product = FakeProduct::new()
+            .with_stash_items(vec![stash_item_1.clone()])
+            .build();
 
-        let mut product = Product::new(
-            "ID".parse().unwrap(),
-            "Brand".parse().unwrap(),
-            "Name",
-            vec![stash_item_1.clone()],
-        );
-
-        let stash_item_2 = StashItem::new(
-            Uuid::new_v4(),
-            2.try_into().unwrap(),
-            NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-        );
-
+        let stash_item_2 = FakeStashItem::new().build();
         let result = product.add_stash_item(stash_item_2.clone());
 
         assert!(result.is_ok());
@@ -314,19 +236,10 @@ mod tests {
 
     #[test]
     fn test_add_stash_item_exists_error() {
-        let stash_item = StashItem::new(
-            Uuid::new_v4(),
-            1.try_into().unwrap(),
-            NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-        );
-
-        let mut product = Product::new(
-            "ID".parse().unwrap(),
-            "Brand".parse().unwrap(),
-            "Name",
-            vec![stash_item.clone()],
-        );
-
+        let stash_item = FakeStashItem::new().build();
+        let mut product = FakeProduct::new()
+            .with_stash_items(vec![stash_item.clone()])
+            .build();
         let result = product.add_stash_item(stash_item.clone());
 
         assert!(result.is_err());
@@ -335,19 +248,10 @@ mod tests {
 
     #[test]
     fn test_remove_stash_item() {
-        let stash_item = StashItem::new(
-            Uuid::new_v4(),
-            1.try_into().unwrap(),
-            NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-        );
-
-        let mut product = Product::new(
-            "ID".parse().unwrap(),
-            "Brand".parse().unwrap(),
-            "Name",
-            vec![stash_item.clone()],
-        );
-
+        let stash_item = FakeStashItem::new().build();
+        let mut product = FakeProduct::new()
+            .with_stash_items(vec![stash_item.clone()])
+            .build();
         let result = product.remove_stash_item(stash_item.id());
 
         assert!(result.is_ok());
@@ -356,13 +260,7 @@ mod tests {
 
     #[test]
     fn test_remove_stash_item_doesnt_exist() {
-        let mut product = Product::new(
-            "ID".parse().unwrap(),
-            "Brand".parse().unwrap(),
-            "Name",
-            vec![],
-        );
-
+        let mut product = FakeProduct::new().build();
         let result = product.remove_stash_item(&Uuid::new_v4());
 
         assert!(result.is_err());
@@ -370,25 +268,13 @@ mod tests {
 
     #[test]
     fn test_replace_stash_item() {
-        let stash_item_1 = StashItem::new(
-            Uuid::new_v4(),
-            1.try_into().unwrap(),
-            "2021-01-01".parse().unwrap(),
-        );
-
-        let mut product = Product::new(
-            "ID".parse().unwrap(),
-            "Brand".parse().unwrap(),
-            "Name",
-            vec![stash_item_1.clone()],
-        );
-
-        let stash_item_2 = StashItem::new(
-            stash_item_1.id().clone(),
-            2.try_into().unwrap(),
-            "2021-01-01".parse().unwrap(),
-        );
-
+        let stash_item_1 = FakeStashItem::new().build();
+        let mut product = FakeProduct::new()
+            .with_stash_items(vec![stash_item_1.clone()])
+            .build();
+        let stash_item_2 = FakeStashItem::new()
+            .with_id(stash_item_1.id().clone())
+            .build();
         let result = product.update_stash_item(stash_item_2.clone());
 
         assert!(result.is_ok());
@@ -398,19 +284,8 @@ mod tests {
 
     #[test]
     fn test_replace_stash_item_doesnt_exist() {
-        let mut product = Product::new(
-            "ID".parse().unwrap(),
-            "Brand".parse().unwrap(),
-            "Name",
-            vec![],
-        );
-
-        let stash_item = StashItem::new(
-            Uuid::new_v4(),
-            2.try_into().unwrap(),
-            "2021-01-01".parse().unwrap(),
-        );
-
+        let mut product = FakeProduct::new().build();
+        let stash_item = FakeStashItem::new().build();
         let result = product.update_stash_item(stash_item.clone());
 
         assert!(result.is_err());

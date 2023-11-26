@@ -24,6 +24,21 @@ impl Brand {
         }
     }
 
+    /// Create a random brand, for testing purposes
+    #[cfg(test)]
+    pub fn random() -> Self {
+        use rand::distributions::Alphanumeric;
+        use rand::Rng;
+
+        let rng = rand::thread_rng();
+        let brand = rng
+            .sample_iter(Alphanumeric)
+            .map(char::from)
+            .take(10)
+            .collect();
+        Self(brand)
+    }
+
     /// Get the value of the brand
     ///
     /// # Returns

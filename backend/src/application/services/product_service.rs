@@ -178,18 +178,20 @@ impl GetStashItems for ProductService {
 
 #[cfg(test)]
 mod tests {
-    use chrono::NaiveDate;
     use mockall::predicate::eq;
     use uuid::Uuid;
 
-    use crate::domain::repositories::MockProductRepository;
+    use crate::domain::{
+        entities::{FakeProduct, FakeStashItem},
+        repositories::MockProductRepository,
+    };
 
     use super::*;
 
     #[test]
     fn test_get_product_by_id() {
-        let product_id: ProductId = "ID".parse().unwrap();
-        let product = Product::new(product_id.clone(), "BRAND".parse().unwrap(), "NAME", vec![]);
+        let product = FakeProduct::new().build();
+        let product_id = product.id().clone();
         let returned_product = product.clone();
 
         let mut product_repository = MockProductRepository::new();
@@ -224,8 +226,8 @@ mod tests {
 
     #[test]
     fn test_create_product() {
-        let product_id: ProductId = "ID".parse().unwrap();
-        let product = Product::new(product_id.clone(), "BRAND".parse().unwrap(), "NAME", vec![]);
+        let product = FakeProduct::new().build();
+        let product_id = product.id().clone();
         let returned_product = product.clone();
 
         let mut product_repository = MockProductRepository::new();
@@ -251,8 +253,8 @@ mod tests {
 
     #[test]
     fn test_create_product_already_exists() {
-        let product_id: ProductId = "ID".parse().unwrap();
-        let product = Product::new(product_id.clone(), "BRAND".parse().unwrap(), "NAME", vec![]);
+        let product = FakeProduct::new().build();
+        let product_id = product.id().clone();
 
         let mut product_repository = MockProductRepository::new();
         product_repository
@@ -272,8 +274,8 @@ mod tests {
 
     #[test]
     fn test_update_product() {
-        let product_id: ProductId = "ID".parse().unwrap();
-        let product = Product::new(product_id.clone(), "BRAND".parse().unwrap(), "NAME", vec![]);
+        let product = FakeProduct::new().build();
+        let product_id = product.id().clone();
         let returned_product = product.clone();
 
         let mut product_repository = MockProductRepository::new();
@@ -301,8 +303,8 @@ mod tests {
 
     #[test]
     fn test_update_product_not_found() {
-        let product_id: ProductId = "ID".parse().unwrap();
-        let product = Product::new(product_id.clone(), "BRAND".parse().unwrap(), "NAME", vec![]);
+        let product = FakeProduct::new().build();
+        let product_id = product.id().clone();
 
         let mut product_repository = MockProductRepository::new();
         product_repository
@@ -356,13 +358,9 @@ mod tests {
 
     #[test]
     fn test_add_stash_item() {
-        let product_id: ProductId = "ID".parse().unwrap();
-        let product = Product::new(product_id.clone(), "BRAND".parse().unwrap(), "NAME", vec![]);
-        let stash_item = StashItem::new(
-            Uuid::new_v4(),
-            1.try_into().unwrap(),
-            NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-        );
+        let product = FakeProduct::new().with_stash_items(Vec::new()).build();
+        let product_id = product.id().clone();
+        let stash_item = FakeStashItem::new().build();
 
         let mut product_repository = MockProductRepository::new();
         product_repository
@@ -384,22 +382,11 @@ mod tests {
     #[test]
     fn test_update_stash_item() {
         let stash_item_id = Uuid::new_v4();
-        let product_id: ProductId = "ID".parse().unwrap();
-        let product = Product::new(
-            product_id.clone(),
-            "BRAND".parse().unwrap(),
-            "NAME",
-            vec![StashItem::new(
-                stash_item_id,
-                1.try_into().unwrap(),
-                NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-            )],
-        );
-        let stash_item = StashItem::new(
-            stash_item_id,
-            2.try_into().unwrap(),
-            NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-        );
+        let product = FakeProduct::new()
+            .with_stash_items(vec![FakeStashItem::new().with_id(stash_item_id).build()])
+            .build();
+        let product_id = product.id().clone();
+        let stash_item = FakeStashItem::new().with_id(stash_item_id).build();
 
         let mut product_repository = MockProductRepository::new();
         product_repository
@@ -418,17 +405,10 @@ mod tests {
     #[test]
     fn test_delete_stash_item() {
         let stash_item_id = Uuid::new_v4();
-        let product_id: ProductId = "ID".parse().unwrap();
-        let product = Product::new(
-            product_id.clone(),
-            "BRAND".parse().unwrap(),
-            "NAME",
-            vec![StashItem::new(
-                stash_item_id,
-                1.try_into().unwrap(),
-                NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-            )],
-        );
+        let product = FakeProduct::new()
+            .with_stash_items(vec![FakeStashItem::new().with_id(stash_item_id).build()])
+            .build();
+        let product_id = product.id().clone();
 
         let mut product_repository = MockProductRepository::new();
         product_repository
@@ -449,25 +429,11 @@ mod tests {
 
     #[test]
     fn test_get_stash_items() {
-        let product_id: ProductId = "ID".parse().unwrap();
-        let expected_stash_items = vec![
-            StashItem::new(
-                Uuid::new_v4(),
-                1.try_into().unwrap(),
-                NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-            ),
-            StashItem::new(
-                Uuid::new_v4(),
-                2.try_into().unwrap(),
-                NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
-            ),
-        ];
-        let product = Product::new(
-            product_id.clone(),
-            "BRAND".parse().unwrap(),
-            "NAME",
-            expected_stash_items.clone(),
-        );
+        let expected_stash_items = vec![FakeStashItem::new().build(), FakeStashItem::new().build()];
+        let product = FakeProduct::new()
+            .with_stash_items(expected_stash_items.clone())
+            .build();
+        let product_id = product.id().clone();
 
         let mut product_repository = MockProductRepository::new();
         product_repository

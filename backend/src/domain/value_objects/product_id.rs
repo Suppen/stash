@@ -7,12 +7,34 @@ use crate::domain::errors::ProductIdError;
 pub struct ProductId(String);
 
 impl ProductId {
+    /// Create a new product ID
+    ///
+    /// # Parameters
+    /// - `value` - The value of the product ID
+    ///
+    /// # Errors
+    /// - `ProductIdError::EmptyStringError` - The value is empty
     pub fn new(value: String) -> Result<Self, ProductIdError> {
         if value.len() == 0 {
             Err(ProductIdError::EmptyStringError)
         } else {
             Ok(ProductId(value))
         }
+    }
+
+    /// Create a random product ID, for testing purposes
+    #[cfg(test)]
+    pub fn random() -> Self {
+        use rand::distributions::Alphanumeric;
+        use rand::Rng;
+
+        let rng = rand::thread_rng();
+        let product_id = rng
+            .sample_iter(Alphanumeric)
+            .map(char::from)
+            .take(10)
+            .collect();
+        Self(product_id)
     }
 
     pub fn value(&self) -> &String {

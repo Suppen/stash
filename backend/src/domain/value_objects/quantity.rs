@@ -16,6 +16,18 @@ impl Quantity {
         Quantity::try_from(value)
     }
 
+    /// Create a random quantity, for testing purposes
+    #[cfg(test)]
+    pub fn random() -> Self {
+        use rand::distributions::Uniform;
+        use rand::Rng;
+
+        let mut rng = rand::thread_rng();
+        let range = Uniform::new_inclusive(1, 100);
+        let value = rng.sample(range);
+        Self(value)
+    }
+
     /// Get the value of the quantity
     pub fn value(&self) -> u64 {
         self.0

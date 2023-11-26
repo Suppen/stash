@@ -40,41 +40,29 @@ impl Entity<Uuid> for StashItem {
 
 #[cfg(test)]
 mod tests {
+    use crate::domain::entities::FakeStashItem;
+
     use super::*;
     use chrono::NaiveDate;
 
     #[test]
     fn test_id() {
         let id = Uuid::new_v4();
-
-        let item = StashItem::new(
-            id.clone(),
-            Quantity::new(1).unwrap(),
-            NaiveDate::from_ymd_opt(2023, 10, 28).unwrap(),
-        );
-
+        let item = FakeStashItem::new().with_id(id).build();
         assert_eq!(item.id(), &id);
     }
 
     #[test]
     fn test_quantity() {
         let quantity = Quantity::new(5).unwrap();
-
-        let item = StashItem::new(
-            Uuid::new_v4(),
-            quantity,
-            NaiveDate::from_ymd_opt(2023, 10, 28).unwrap(),
-        );
-
+        let item = FakeStashItem::new().with_quantity(quantity).build();
         assert_eq!(item.quantity(), &quantity);
     }
 
     #[test]
     fn test_expiry_date() {
-        let expires = NaiveDate::from_ymd_opt(2023, 10, 28).unwrap();
-
-        let item = StashItem::new(Uuid::new_v4(), Quantity::new(1).unwrap(), expires);
-
+        let expires = NaiveDate::from_ymd_opt(2023, 11, 26).unwrap();
+        let item = FakeStashItem::new().with_expiry_date(expires).build();
         assert_eq!(item.expiry_date(), &expires);
     }
 }
