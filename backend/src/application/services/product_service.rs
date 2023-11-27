@@ -3,7 +3,8 @@ use std::{collections::HashSet, sync::Arc};
 use crate::{
     application::use_cases::{
         AddStashItem, CreateProduct, DeleteProduct, DeleteStashItem, GetProduct,
-        GetProductByStashItemId, GetStashItems, UpdateProduct, UpdateStashItem,
+        GetProductByStashItemId, GetProductsExpiringBefore, GetStashItems, UpdateProduct,
+        UpdateStashItem,
     },
     domain::{
         entities::{Product, StashItem},
@@ -185,8 +186,19 @@ impl GetProductByStashItemId for ProductService {
     }
 }
 
+impl GetProductsExpiringBefore for ProductService {
+    fn products_expiring_before(
+        &self,
+        before: chrono::NaiveDate,
+    ) -> Result<Vec<Product>, ProductRepositoryError> {
+        self.product_repository
+            .find_expiring_in_interval(None, Some(before))
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use chrono::NaiveDate;
     use mockall::predicate::eq;
     use uuid::Uuid;
 
@@ -485,5 +497,33 @@ mod tests {
         let found_product = result.unwrap().unwrap();
 
         assert_eq!(found_product, product);
+    }
+
+    #[test]
+    fn test_get_products_expiring_before() {
+        let product = FakeProduct::new()
+            .with_stash_items(vec![FakeStashItem::new()
+                .with_expiry_date(NaiveDate::from_ymd_opt(2023, 01, 01).unwrap())
+                .build()])
+            .build();
+        let returned_product = product.clone();
+
+        let mut product_repository = MockProductRepository::new();
+        product_repository
+            .expect_find_expiring_in_interval()
+            .with(
+                eq(None),
+                eq(Some(NaiveDate::from_ymd_opt(2023, 01, 02).unwrap())),
+            )
+            .returning(move |_, _| Ok(vec![returned_product.clone()]));
+
+        let product_service = ProductService::new(Arc::new(Box::new(product_repository)));
+
+        let result = product_service
+            .products_expiring_before(NaiveDate::from_ymd_opt(2023, 01, 02).unwrap())
+            .unwrap();
+
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0], product);
     }
 }
