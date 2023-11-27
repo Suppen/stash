@@ -10,9 +10,22 @@ use rsstash::{
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // Set up the connection to the database
-    let connection = rusqlite::Connection::open_in_memory().unwrap();
+    // Create the database connection
+    let connection = match std::env::var("STASH_DB_PATH") {
+        Ok(path) => {
+            println!("Using database at {}", path);
+            rusqlite::Connection::open(path).unwrap()
+        }
+        Err(_) => {
+            eprintln!("No database path provided, using in-memory database");
+            rusqlite::Connection::open_in_memory().unwrap()
+        }
+    };
+
+    // Setup the database
     setup_db(&connection).unwrap();
+
+    // Make the connection shareable
     let shared_connection = Arc::new(Mutex::new(connection));
 
     // Create the repositories
