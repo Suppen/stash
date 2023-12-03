@@ -18,6 +18,14 @@ try {
                     quantityMustBeGreaterThanZero: "Antall må være større enn 0",
                     quantityIsRequired: "Antall er påkrevd",
                     expiryDateIsRequired: "Utløpsdato er påkrevd"
+                },
+                product: {
+                    id: "ID (strekkode)",
+                    brand: "Merke",
+                    name: "Navn",
+                    idIsRequired: "ID strekkode er påkrevd",
+                    brandIsRequired: "Merke er påkrevd",
+                    nameIsRequired: "Navn er påkrevd"
                 }
             }
         }

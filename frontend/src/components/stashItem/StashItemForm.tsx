@@ -1,10 +1,10 @@
 import { useForm } from "react-hook-form";
-import { StashItem } from "../domain/entities/StashItem";
-import Quantity from "../domain/valueObjects/Quantity";
-import PlainDate from "../domain/valueObjects/PlainDate";
+import { StashItem } from "../../domain/entities/StashItem";
+import Quantity from "../../domain/valueObjects/Quantity";
+import PlainDate from "../../domain/valueObjects/PlainDate";
 import { useId } from "react";
-import { UUID } from "../domain/valueObjects/UUID";
-import { ErrorMessage } from "./ErrorMessage";
+import { UUID } from "../../domain/valueObjects/UUID";
+import { ErrorMessage } from "../application/ErrorMessage";
 import { useTranslation } from "react-i18next";
 
 export type Props = {
@@ -19,7 +19,6 @@ export const StashItemForm = ({ stashItem, onSubmit }: Props): JSX.Element => {
 
     const form = useForm({
         defaultValues: {
-            id: stashItem?.id ?? UUID.v4(),
             quantity: stashItem?.quantity.value() ?? 1,
             expiry_date: stashItem?.expiryDate.toISOString() ?? undefined
         }
@@ -29,13 +28,13 @@ export const StashItemForm = ({ stashItem, onSubmit }: Props): JSX.Element => {
         <form
             onSubmit={e =>
                 void form.handleSubmit(async data => {
-                    const stashItem: StashItem = {
-                        id: data.id,
+                    const output: StashItem = {
+                        id: stashItem?.id ?? UUID.v4(),
                         quantity: new Quantity(Number(data.quantity)),
                         expiryDate: new PlainDate(data.expiry_date!)
                     };
 
-                    await onSubmit(stashItem);
+                    await onSubmit(output);
                 })(e)
             }
         >

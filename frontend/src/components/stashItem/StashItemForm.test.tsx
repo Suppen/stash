@@ -2,9 +2,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { StashItemForm } from "./StashItemForm";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { fakeStashItem } from "../domain/entities/fakeStashItem";
-import { StashItem } from "../domain/entities/StashItem";
-import { UUID } from "../domain/valueObjects/UUID";
+import { fakeStashItem } from "../../domain/entities/fakeStashItem";
+import { StashItem } from "../../domain/entities/StashItem";
+import { UUID } from "../../domain/valueObjects/UUID";
 
 let user: ReturnType<typeof userEvent.setup>;
 beforeEach(() => {
@@ -121,4 +121,18 @@ describe("Submitting the form with a StashItem provided", () => {
 
         expect(onSubmit).toHaveBeenCalledWith(expectedStashItem);
     });
+});
+
+it("should have unique IDs for each form so that there are no collisions if multiple instances are rendered", () => {
+    const { container } = render(
+        <>
+            <StashItemForm onSubmit={vi.fn()} />
+            <StashItemForm onSubmit={vi.fn()} />
+        </>
+    );
+
+    const idList = Array.from(container.querySelectorAll("[id]")).map(e => e.id);
+    const idSet = new Set(idList);
+
+    expect(idList.length).toBe(idSet.size);
 });
