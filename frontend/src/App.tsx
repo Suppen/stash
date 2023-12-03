@@ -1,5 +1,5 @@
 const App = (): JSX.Element => {
-    return <p>Kake</p>;
+    return <div className="app">Kake</div>;
 };
 
 export default App;

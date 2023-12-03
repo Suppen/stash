@@ -1,6 +1,3 @@
-/* eslint-disable class-methods-use-this */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/require-await */
 import { Product } from "../domain/entities/Product";
 import { StashItem } from "../domain/entities/StashItem";
 import PlainDate from "../domain/valueObjects/PlainDate";
@@ -82,40 +79,31 @@ export class BackendProductService implements ProductService {
     }
 
     async deleteProduct(productId: Product["id"]): Promise<void> {
-        try {
-            await this.#fetcher(`${this.#baseUrl}/products/${productId.toString()}`, {
-                method: "DELETE"
-            });
-        } catch (err) {
-            if (err instanceof Response) {
-                if (err.status === 404) {
-                    throw new Error("Product does not exist");
-                }
-            }
-            throw err;
-        }
+        await this.#fetcher(`${this.#baseUrl}/products/${productId.toString()}`, {
+            method: "DELETE"
+        });
+
+        // No expected errors
     }
 
     async addStashItem(productId: Product["id"], stashItem: StashItem): Promise<void> {
-        try {
-            await this.#fetcher(`${this.#baseUrl}/products/${productId.toString()}/stash_items`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(fromStashItem(stashItem))
-            });
-        } catch (err) {
-            if (err instanceof Response) {
-                if (err.status === 404) {
-                    throw new Error("Product does not exist");
-                }
-                if (err.status === 409) {
-                    throw new Error("Stash item already exists");
-                }
-            }
-            throw err;
+        const response = await this.#fetcher(`${this.#baseUrl}/products/${productId.toString()}/stash_items`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(fromStashItem(stashItem))
+        });
+        if (response.status === 204) {
+            return;
         }
+        if (response.status === 404) {
+            throw new Error("Product does not exist");
+        }
+        if (response.status === 409) {
+            throw new Error("Stash item already exists");
+        }
+        throw response;
     }
 
     async updateStashItem(productId: Product["id"], stashItem: StashItem): Promise<StashItem> {
@@ -145,19 +133,22 @@ export class BackendProductService implements ProductService {
     }
 
     async deleteStashItem(productId: Product["id"], stashItemId: StashItem["id"]): Promise<void> {
-        try {
-            await this.#fetcher(`${this.#baseUrl}/products/${productId.toString()}/stash_items/${stashItemId}`, {
+        const response = await this.#fetcher(
+            `${this.#baseUrl}/products/${productId.toString()}/stash_items/${stashItemId}`,
+            {
                 method: "DELETE"
-            });
-        } catch (err) {
-            if (err instanceof Response) {
-                const text = await err.text();
-                if (err.status === 404) {
-                    throw new Error(text);
-                }
             }
-            throw err;
+        );
+
+        if (response.status === 204) {
+            return;
         }
+
+        const text = await response.text();
+        if (response.status === 404) {
+            throw new Error(text);
+        }
+        throw response;
     }
 
     async getProductByStashItemId(stashItemId: StashItem["id"]): Promise<Product | null> {

@@ -41,6 +41,9 @@ pub async fn update_stash_item(
         Err(ProductRepositoryError::ProductNotFound) => {
             HttpResponse::NotFound().body("Product not found")
         }
+        Err(ProductRepositoryError::DuplicateExpiryDateError) => {
+            HttpResponse::Conflict().body("Duplicate expiry date")
+        }
         Err(err) => {
             println!("Error: {}", err);
             HttpResponse::InternalServerError().body("Internal Server Error")

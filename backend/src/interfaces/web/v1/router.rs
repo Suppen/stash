@@ -22,7 +22,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .route("/{product_id}", web::put().to(update_product))
             .route("/{product_id}", web::delete().to(delete_product))
             .service(
-                web::scope("/{product_id}/stash-items")
+                web::scope("/{product_id}/stash_items")
                     .route("", web::post().to(add_stash_item))
                     .route("", web::get().to(get_stash_items))
                     .route("/{stash_item_id}", web::put().to(update_stash_item))

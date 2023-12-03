@@ -5,7 +5,7 @@ use getset::{Getters, Setters};
 use uuid::Uuid;
 
 use crate::domain::{
-    errors::{StashItemDoesntExistError, StashItemExistsError},
+    errors::{ProductRepositoryError, StashItemDoesntExistError, StashItemExistsError},
     value_objects::{Brand, ProductId},
 };
 
@@ -152,10 +152,20 @@ impl Product {
     pub fn update_stash_item(
         &mut self,
         stash_item: StashItem,
-    ) -> Result<(), StashItemDoesntExistError> {
+    ) -> Result<(), ProductRepositoryError> {
+        // Check if the stash item exists
+        if !self.has_stash_item(stash_item.id()) {
+            return Err(ProductRepositoryError::StashItemNotFound);
+        }
+
+        // Check if a stash item on the product has the same expiry date
         match self.stash_item_with_expiry_date(stash_item.expiry_date()) {
-            // TODO Other error type
-            Some(_) => return Err(StashItemDoesntExistError),
+            Some(si) => {
+                // ...but not the same ID
+                if si.id() != stash_item.id() {
+                    return Err(ProductRepositoryError::DuplicateExpiryDateError);
+                }
+            }
             None => (),
         }
 

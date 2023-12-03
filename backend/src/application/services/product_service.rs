@@ -97,6 +97,7 @@ impl AddStashItem for ProductService {
 
         self.product_repository.save(product)?;
 
+        // TODO No return value?
         Ok(())
     }
 }

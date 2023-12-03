@@ -23,6 +23,17 @@ export class PlainDate {
         this.#dateStr = dateStr;
     }
 
+    /**
+     * Creates a PlainDate from a Date object
+     *
+     * @param date The date to create a PlainDate from
+     *
+     * @returns A PlainDate
+     */
+    static fromDate(date: Date) {
+        return new PlainDate(date.toISOString().slice(0, 10));
+    }
+
     /** Returns the date string in the format YYYY-MM-DD */
     toString() {
         return this.#dateStr;
