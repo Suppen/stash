@@ -47,6 +47,15 @@ describe("Providing a product", () => {
     });
 });
 
+describe("Providing a product ID", () => {
+    it("should have the provided ID", () => {
+        const productId = fakeProduct().id;
+        render(<ProductForm onSubmit={vi.fn()} productId={productId} />);
+
+        expect(screen.getByLabelText("id")).toHaveValue(productId.value());
+    });
+});
+
 describe("Validation", () => {
     it("requires an ID", async () => {
         const onSubmit = vi.fn();

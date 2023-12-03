@@ -7,18 +7,26 @@ import Brand from "../../domain/valueObjects/Brand";
 import { ErrorMessage } from "../application/ErrorMessage";
 
 export type Props = {
-    product?: Product;
     onSubmit: (product: Product) => void | Promise<void>;
-};
+} & (
+    | {
+          productId?: ProductId;
+          product?: never;
+      }
+    | {
+          productId?: never;
+          product?: Product;
+      }
+);
 
-export const ProductForm = ({ product, onSubmit }: Props): JSX.Element => {
+export const ProductForm = ({ product, productId, onSubmit }: Props): JSX.Element => {
     const { t } = useTranslation();
 
     const id = useId();
 
     const form = useForm({
         defaultValues: {
-            id: product?.id.toString() ?? "",
+            id: product?.id.toString() ?? productId?.toString() ?? "",
             brand: product?.brand.toString() ?? "",
             name: product?.name ?? ""
         }

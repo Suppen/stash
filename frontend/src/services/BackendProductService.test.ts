@@ -176,13 +176,16 @@ describe("updateStashItem", () => {
         fetcher.mockResolvedValueOnce(Response.json(stashItemDTO));
 
         await productService.updateStashItem(productId, stashItem);
-        expect(fetcher).toHaveBeenCalledWith(`${baseUrl}/products/${productId.value()}/stash_items/${stashItem.id}`, {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(stashItemDTO)
-        });
+        expect(fetcher).toHaveBeenCalledWith(
+            `${baseUrl}/products/${productId.value()}/stash_items/${stashItem.id.toString()}`,
+            {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(stashItemDTO)
+            }
+        );
     });
 
     it("should return the updated stash item", async () => {
@@ -209,9 +212,12 @@ describe("deleteStashItem", () => {
         fetcher.mockResolvedValueOnce(new Response(null, { status: 204 }));
 
         await productService.deleteStashItem(productId, stashItemId);
-        expect(fetcher).toHaveBeenCalledWith(`${baseUrl}/products/${productId.value()}/stash_items/${stashItemId}`, {
-            method: "DELETE"
-        });
+        expect(fetcher).toHaveBeenCalledWith(
+            `${baseUrl}/products/${productId.value()}/stash_items/${stashItemId.toString()}`,
+            {
+                method: "DELETE"
+            }
+        );
     });
 
     it("should not return anything", async () => {
@@ -235,7 +241,7 @@ describe("getProductByStashItemId", () => {
         fetcher.mockResolvedValueOnce(Response.json(fakeProductDTO()));
 
         await productService.getProductByStashItemId(stashItemId);
-        expect(fetcher).toHaveBeenCalledWith(`${baseUrl}/products/by_stash_item_id/${stashItemId}`);
+        expect(fetcher).toHaveBeenCalledWith(`${baseUrl}/products/by_stash_item_id/${stashItemId.toString()}`);
     });
 
     it("should return the product", async () => {

@@ -109,7 +109,7 @@ export class BackendProductService implements ProductService {
     async updateStashItem(productId: Product["id"], stashItem: StashItem): Promise<StashItem> {
         try {
             return await createJSONFetcher(data => toStashItem(stashItemDTOSchema.parse(data)), this.#fetcher)(
-                `${this.#baseUrl}/products/${productId.toString()}/stash_items/${stashItem.id}`,
+                `${this.#baseUrl}/products/${productId.toString()}/stash_items/${stashItem.id.toString()}`,
                 {
                     method: "PUT",
                     headers: {
@@ -134,7 +134,7 @@ export class BackendProductService implements ProductService {
 
     async deleteStashItem(productId: Product["id"], stashItemId: StashItem["id"]): Promise<void> {
         const response = await this.#fetcher(
-            `${this.#baseUrl}/products/${productId.toString()}/stash_items/${stashItemId}`,
+            `${this.#baseUrl}/products/${productId.toString()}/stash_items/${stashItemId.toString()}`,
             {
                 method: "DELETE"
             }
@@ -156,7 +156,7 @@ export class BackendProductService implements ProductService {
             return await createJSONFetcher(
                 data => toProduct(productDTOSchema.parse(data)),
                 this.#fetcher
-            )(`${this.#baseUrl}/products/by_stash_item_id/${stashItemId}`);
+            )(`${this.#baseUrl}/products/by_stash_item_id/${stashItemId.toString()}`);
         } catch (err) {
             if (err instanceof Response) {
                 if (err.status === 404) {
