@@ -12,8 +12,13 @@
     "coverage": "vitest --coverage --mode test"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.12.2",
+    "i18next": "^23.7.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-hook-form": "^7.48.2",
+    "react-i18next": "^13.5.0",
+    "uuid": "^9.0.1",
     "zod": "^3.22.4"
   },
   "devDependencies": {
@@ -23,6 +28,7 @@
     "@testing-library/user-event": "^14.5.1",
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
+    "@types/uuid": "^9.0.7",
     "@typescript-eslint/eslint-plugin": "^6.13.0",
     "@typescript-eslint/parser": "^6.13.0",
     "@vitejs/plugin-react-swc": "^3.5.0",

@@ -2,6 +2,7 @@ import * as z from "zod";
 import Quantity from "../domain/valueObjects/Quantity";
 import PlainDate from "../domain/valueObjects/PlainDate";
 import { StashItem } from "../domain/entities/StashItem";
+import { UUID } from "../domain/valueObjects/UUID";
 
 export const stashItemDTOSchema = z.object({
     id: z.string().uuid(),
@@ -12,13 +13,13 @@ export const stashItemDTOSchema = z.object({
 export type StashItemDTO = z.infer<typeof stashItemDTOSchema>;
 
 export const fromStashItem = (stashItem: StashItem): StashItemDTO => ({
-    id: stashItem.id,
+    id: stashItem.id.toString(),
     quantity: stashItem.quantity.value(),
     expiry_date: stashItem.expiryDate.toISOString()
 });
 
 export const toStashItem = (stashItemDTO: StashItemDTO): StashItem => ({
-    id: stashItemDTO.id as StashItem["id"], // TODO Actually validate this
+    id: UUID.fromString(stashItemDTO.id),
     quantity: new Quantity(stashItemDTO.quantity),
     expiryDate: new PlainDate(stashItemDTO.expiry_date)
 });
