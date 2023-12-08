@@ -18,7 +18,7 @@ export class Quantity {
     }
 
     /** Returns the quantity */
-    value() {
+    get value() {
         return this.#value;
     }
 
