@@ -5,6 +5,7 @@ import ProductId from "../../domain/valueObjects/ProductId";
 import { ProductForm } from "../product/ProductForm";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { Box, Typography } from "@mui/material";
 
 export type Props = {
     getProduct: (productId: ProductId) => Promise<Product | null>;
@@ -49,10 +50,10 @@ export const ProductPage = ({ getProduct, createProduct, updateProduct }: Props)
     }
 
     return (
-        <div>
+        <Box>
             {product === null ? (
                 <>
-                    <h1>{t("product:newProduct")}</h1>
+                    <Typography variant="h3">{t("product:newProduct")}</Typography>
                     <ProductForm
                         productId={productId}
                         onSubmit={async product => {
@@ -63,7 +64,7 @@ export const ProductPage = ({ getProduct, createProduct, updateProduct }: Props)
                 </>
             ) : (
                 <>
-                    <h1>{t("product:updateProduct")}</h1>
+                    <Typography variant="h3">{t("product:updateProduct")}</Typography>
                     <ProductForm
                         product={product}
                         onSubmit={async product => {
@@ -73,6 +74,6 @@ export const ProductPage = ({ getProduct, createProduct, updateProduct }: Props)
                     />
                 </>
             )}
-        </div>
+        </Box>
     );
 };

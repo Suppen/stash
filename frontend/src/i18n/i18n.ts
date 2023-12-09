@@ -13,7 +13,8 @@ await i18next.use(initReactI18next).init({
                 findProduct: "Finn produkt",
                 loading: "Laster",
                 unknownError: "Ukjent feil",
-                actions: "Handlinger"
+                actions: "Handlinger",
+                delete: "Slett"
             },
             stashItem: {
                 quantity: "Antall",

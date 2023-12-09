@@ -1,15 +1,25 @@
 import { useTranslation } from "react-i18next";
 import { Product } from "../../domain/entities/Product";
-import { useId } from "react";
-import { useForm } from "react-hook-form";
 import ProductId from "../../domain/valueObjects/ProductId";
 import Brand from "../../domain/valueObjects/Brand";
-import { ErrorMessage } from "../application/ErrorMessage";
 import Quantity from "../../domain/valueObjects/Quantity";
 import { UUID } from "../../domain/valueObjects/UUID";
 import PlainDate from "../../domain/valueObjects/PlainDate";
+import { Controller, useForm } from "react-hook-form";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash } from "@fortawesome/free-solid-svg-icons/faTrash";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import Box from "@mui/material/Box";
+import TableContainer from "@mui/material/TableContainer";
+import Paper from "@mui/material/Paper";
+import Table from "@mui/material/Table";
+import TableHead from "@mui/material/TableHead";
+import TableBody from "@mui/material/TableBody";
+import TableRow from "@mui/material/TableRow";
+import TableCell from "@mui/material/TableCell";
+import TableFooter from "@mui/material/TableFooter";
+import { Grid, Typography } from "@mui/material";
 
 export type Props = {
     onSubmit: (product: Product) => void | Promise<void>;
@@ -29,6 +39,7 @@ type FormValueStashItem = {
     id: string;
     expiryDate: string;
     quantity: number;
+    isNew: boolean;
 };
 
 /** The form's internal representation of a product. */
@@ -56,7 +67,8 @@ const productToFormValues = (product: Product): FormValues => ({
             r[si.id.toString()] = {
                 id: si.id.toString(),
                 expiryDate: si.expiryDate.toString(),
-                quantity: si.quantity.valueOf()
+                quantity: si.quantity.valueOf(),
+                isNew: false
             };
             return r;
         },
@@ -90,8 +102,6 @@ const formValuesToProduct = (formValues: FormValues): Product => ({
 export const ProductForm = ({ product, productId, onSubmit }: Props): JSX.Element => {
     const { t } = useTranslation();
 
-    const formId = useId();
-
     const form = useForm<FormValues>({
         defaultValues: product
             ? productToFormValues(product)
@@ -113,7 +123,8 @@ export const ProductForm = ({ product, productId, onSubmit }: Props): JSX.Elemen
         stashItems[newId] = {
             id: newId,
             expiryDate: "",
-            quantity: 1
+            quantity: 1,
+            isNew: true
         };
         form.setValue("stashItems", stashItems);
 
@@ -145,152 +156,195 @@ export const ProductForm = ({ product, productId, onSubmit }: Props): JSX.Elemen
     const stashItemOrder = form.watch("stashItemOrder");
 
     return (
-        <form
+        <Box
+            component="form"
             onSubmit={e =>
                 void form.handleSubmit(async data => {
                     await onSubmit(formValuesToProduct(data));
                 })(e)
             }
         >
-            <div>
-                <label htmlFor={`${formId}-id`}>{t("product:id")}</label>
-                <input
-                    disabled
-                    id={`${formId}-id`}
-                    type="text"
-                    {...form.register("id", {
-                        required: t("product:idIsRequired"),
-                        validate: (value: string) => {
-                            try {
-                                new ProductId(value);
-                                return true;
-                            } catch {
-                                return t("product:idIsInvalid");
+            <Grid container spacing={3}>
+                <Grid item xs={4}>
+                    <TextField
+                        variant="outlined"
+                        fullWidth
+                        label={t("product:brand")}
+                        error={form.formState.errors.brand?.message !== undefined}
+                        helperText={form.formState.errors.brand?.message}
+                        {...form.register("brand", {
+                            required: t("product:brandIsRequired"),
+                            validate: (value: string) => {
+                                try {
+                                    new Brand(value);
+                                    return true;
+                                } catch {
+                                    return t("product:brandIsInvalid");
+                                }
                             }
-                        }
-                    })}
-                />
-                <ErrorMessage>{form.formState.errors.id?.message}</ErrorMessage>
-            </div>
-            <div>
-                <label htmlFor={`${formId}-brand`}>{t("product:brand")}</label>
-                <input
-                    id={`${formId}-brand`}
-                    type="text"
-                    {...form.register("brand", {
-                        required: t("product:brandIsRequired"),
-                        validate: (value: string) => {
-                            try {
-                                new Brand(value);
-                                return true;
-                            } catch {
-                                return t("product:brandIsInvalid");
+                        })}
+                    />
+                </Grid>
+                <Grid item xs={4}>
+                    <TextField
+                        variant="outlined"
+                        fullWidth
+                        label={t("product:name")}
+                        error={form.formState.errors.name?.message !== undefined}
+                        helperText={form.formState.errors.name?.message}
+                        {...form.register("name", {
+                            required: t("product:nameIsRequired")
+                        })}
+                    />
+                </Grid>
+                <Grid item xs={4}>
+                    <TextField
+                        variant="outlined"
+                        fullWidth
+                        label={t("product:id")}
+                        error={form.formState.errors.id?.message !== undefined}
+                        helperText={form.formState.errors.id?.message}
+                        {...form.register("id", {
+                            required: t("product:idIsRequired"),
+                            validate: (value: string) => {
+                                try {
+                                    new ProductId(value);
+                                    return true;
+                                } catch {
+                                    return t("product:idIsInvalid");
+                                }
                             }
-                        }
-                    })}
-                />
-                <ErrorMessage>{form.formState.errors.brand?.message}</ErrorMessage>
-            </div>
-            <div>
-                <label htmlFor={`${formId}-name`}>{t("product:name")}</label>
-                <input
-                    id={`${formId}-name`}
-                    type="text"
-                    {...form.register("name", {
-                        required: t("product:nameIsRequired")
-                    })}
-                />
-                <ErrorMessage>{form.formState.errors.name?.message}</ErrorMessage>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>{t("stashItem:expiryDate")}</th>
-                        <th>{t("stashItem:quantity")}</th>
-                        <th>{t("actions")}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {stashItemOrder.length !== 0 ? (
-                        stashItemOrder.map(id => (
-                            <tr key={id}>
-                                <td>
-                                    <label htmlFor={`${formId}-stashItems.${id}.expiryDate`}>
-                                        {t("stashItem:expiryDate")}
-                                    </label>
-                                    <input
-                                        id={`${formId}-stashItems.${id}.expiryDate`}
-                                        type="date"
-                                        {...form.register(`stashItems.${id}.expiryDate`, {
-                                            required: t("stashItem:expiryDateIsRequired"),
-                                            validate: (value: string) => {
-                                                try {
-                                                    new PlainDate(value);
-                                                    return true;
-                                                } catch {
-                                                    return t("stashItem:expiryDateIsInvalid");
+                        })}
+                    />
+                </Grid>
+            </Grid>
+            <TableContainer component={Paper}>
+                <Table>
+                    <TableHead>
+                        <TableRow>
+                            <TableCell sx={{ width: "40%" }}>{t("stashItem:expiryDate")}</TableCell>
+                            <TableCell sx={{ width: "40%" }}>{t("stashItem:quantity")}</TableCell>
+                            <TableCell sx={{ width: "20%" }}>{t("actions")}</TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {stashItemOrder.length !== 0 ? (
+                            stashItemOrder.map(id => {
+                                const stashItem = form.getValues("stashItems")[id];
+
+                                return (
+                                    <TableRow key={id}>
+                                        <TableCell>
+                                            <TextField
+                                                type="date"
+                                                variant="outlined"
+                                                fullWidth
+                                                error={
+                                                    form.formState.errors.stashItems?.[id]?.expiryDate?.message !==
+                                                    undefined
                                                 }
-                                            }
-                                        })}
-                                    />
-                                    <ErrorMessage>
-                                        {form.formState.errors.stashItems?.[id]?.expiryDate?.message}
-                                    </ErrorMessage>
-                                </td>
-                                <td>
-                                    <label htmlFor={`${formId}-stashItems.${id}.quantity`}>
-                                        {t("stashItem:quantity")}
-                                    </label>
-                                    <input
-                                        id={`${formId}-stashItems.${id}.quantity`}
-                                        type="number"
-                                        min="1"
-                                        {...form.register(`stashItems.${id}.quantity`, {
-                                            required: t("stashItem:quantityIsRequired"),
-                                            min: t("stashItem:quantityMustBeGreaterThanZero"),
-                                            valueAsNumber: true,
-                                            validate: (value: number) => {
-                                                try {
-                                                    new Quantity(value);
-                                                    return true;
-                                                } catch {
-                                                    return t("stashItem:quantityIsInvalid");
-                                                }
-                                            }
-                                        })}
-                                    />
-                                    <ErrorMessage>
-                                        {form.formState.errors.stashItems?.[id]?.quantity?.message}
-                                    </ErrorMessage>
-                                </td>
-                                <td>
-                                    <button type="button" onClick={() => deleteStashItem(id)}>
-                                        <FontAwesomeIcon icon={faTrash} />
-                                    </button>
-                                </td>
-                            </tr>
-                        ))
-                    ) : (
-                        <tr>
-                            <td colSpan={3}>
-                                <p>{t("stashItem:noStashItems")}</p>
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td colSpan={3}>
-                            <button type="button" onClick={addStashItem}>
-                                {t("stashItem:add")}
-                            </button>
-                        </td>
-                    </tr>
-                </tfoot>
-            </table>
-            <button type="submit" disabled={form.formState.isSubmitting}>
+                                                helperText={form.formState.errors.stashItems?.[id]?.expiryDate?.message}
+                                                disabled={!stashItem.isNew}
+                                                {...form.register(`stashItems.${id}.expiryDate`, {
+                                                    required: t("stashItem:expiryDateIsRequired"),
+                                                    validate: (value: string) => {
+                                                        try {
+                                                            new PlainDate(value);
+                                                            return true;
+                                                        } catch {
+                                                            return t("stashItem:expiryDateIsInvalid");
+                                                        }
+                                                    }
+                                                })}
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Controller
+                                                control={form.control}
+                                                name={`stashItems.${id}.quantity`}
+                                                rules={{
+                                                    required: t("stashItem:quantityIsRequired"),
+                                                    min: {
+                                                        value: 1,
+                                                        message: t("stashItem:quantityMustBeGreaterThanZero")
+                                                    },
+                                                    validate: value => {
+                                                        try {
+                                                            new Quantity(value);
+                                                            return true;
+                                                        } catch {
+                                                            return t("stashItem:quantityIsInvalid");
+                                                        }
+                                                    }
+                                                }}
+                                                render={({ field, fieldState: { error } }) => (
+                                                    <Box
+                                                        display="flex"
+                                                        alignItems="stretch"
+                                                        justifyContent="center"
+                                                        gap="0.5em"
+                                                    >
+                                                        <Button
+                                                            variant="contained"
+                                                            type="button"
+                                                            onClick={() => field.onChange(field.value - 1)}
+                                                        >
+                                                            -
+                                                        </Button>
+                                                        <TextField
+                                                            variant="outlined"
+                                                            fullWidth
+                                                            type="number"
+                                                            error={error !== undefined}
+                                                            helperText={error?.message}
+                                                            {...field}
+                                                        />
+                                                        <Button
+                                                            variant="contained"
+                                                            type="button"
+                                                            onClick={() => field.onChange(field.value + 1)}
+                                                        >
+                                                            +
+                                                        </Button>
+                                                    </Box>
+                                                )}
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Button
+                                                variant="contained"
+                                                color="warning"
+                                                type="button"
+                                                onClick={() => deleteStashItem(id)}
+                                            >
+                                                <FontAwesomeIcon icon={faTrash} /> {t("delete")}
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={3}>
+                                    <Typography variant="body1">{t("stashItem:noStashItems")}</Typography>
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                    <TableFooter>
+                        <TableRow>
+                            <TableCell colSpan={3}>
+                                <Button variant="contained" type="button" onClick={addStashItem}>
+                                    {t("stashItem:add")}
+                                </Button>
+                            </TableCell>
+                        </TableRow>
+                    </TableFooter>
+                </Table>
+            </TableContainer>
+            <Button variant="contained" color="success" type="submit" disabled={form.formState.isSubmitting}>
                 {t("save")}
-            </button>
-        </form>
+            </Button>
+        </Box>
     );
 };
