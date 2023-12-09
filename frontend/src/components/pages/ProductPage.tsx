@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 import { Product } from "../../domain/entities/Product";
 import ProductId from "../../domain/valueObjects/ProductId";
@@ -14,6 +14,7 @@ export type Props = {
 
 export const ProductPage = ({ getProduct, createProduct, updateProduct }: Props): JSX.Element => {
     const { t } = useTranslation();
+    const queryClient = useQueryClient();
 
     // Get the ID from the URL
     const { id } = useParams<{ id: string }>();
@@ -35,6 +36,8 @@ export const ProductPage = ({ getProduct, createProduct, updateProduct }: Props)
         queryFn: () => getProduct(productId)
     });
 
+    const invalidateQueries = () => Promise.all([queryClient.invalidateQueries({ queryKey: ["product", id] })]);
+
     if (error !== null) {
         // TODO Proper error handling
         console.error(error);
@@ -50,12 +53,24 @@ export const ProductPage = ({ getProduct, createProduct, updateProduct }: Props)
             {product === null ? (
                 <>
                     <h1>{t("product:newProduct")}</h1>
-                    <ProductForm productId={productId} onSubmit={createProduct} />
+                    <ProductForm
+                        productId={productId}
+                        onSubmit={async product => {
+                            await createProduct(product);
+                            await invalidateQueries();
+                        }}
+                    />
                 </>
             ) : (
                 <>
                     <h1>{t("product:updateProduct")}</h1>
-                    <ProductForm product={product} onSubmit={updateProduct} />
+                    <ProductForm
+                        product={product}
+                        onSubmit={async product => {
+                            await updateProduct(product);
+                            await invalidateQueries();
+                        }}
+                    />
                 </>
             )}
         </div>

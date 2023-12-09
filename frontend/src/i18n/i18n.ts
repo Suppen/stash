@@ -23,7 +23,8 @@ await i18next.use(initReactI18next).init({
                 expiryDateIsRequired: "Utløpsdato er påkrevd",
                 expiryDateIsInvalid: "Utløpsdato er ugyldig",
                 quantityIsInvalid: "Antall er ugyldig",
-                add: "Legg til"
+                add: "Legg til",
+                noStashItems: "Ingen varer i beholdningen"
             },
             product: {
                 id: "ID (strekkode)",

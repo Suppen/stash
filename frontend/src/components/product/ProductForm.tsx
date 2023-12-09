@@ -20,7 +20,7 @@ export type Props = {
       }
     | {
           productId?: never;
-          product?: Product;
+          product: Product;
       }
 );
 
@@ -90,7 +90,7 @@ const formValuesToProduct = (formValues: FormValues): Product => ({
 export const ProductForm = ({ product, productId, onSubmit }: Props): JSX.Element => {
     const { t } = useTranslation();
 
-    const id = useId();
+    const formId = useId();
 
     const form = useForm<FormValues>({
         defaultValues: product
@@ -142,6 +142,8 @@ export const ProductForm = ({ product, productId, onSubmit }: Props): JSX.Elemen
         //form.unregister(`stashItems.${id}`);
     };
 
+    const stashItemOrder = form.watch("stashItemOrder");
+
     return (
         <form
             onSubmit={e =>
@@ -151,10 +153,10 @@ export const ProductForm = ({ product, productId, onSubmit }: Props): JSX.Elemen
             }
         >
             <div>
-                <label htmlFor={`${id}-id`}>{t("product:id")}</label>
+                <label htmlFor={`${formId}-id`}>{t("product:id")}</label>
                 <input
                     disabled
-                    id={`${id}-id`}
+                    id={`${formId}-id`}
                     type="text"
                     {...form.register("id", {
                         required: t("product:idIsRequired"),
@@ -171,9 +173,9 @@ export const ProductForm = ({ product, productId, onSubmit }: Props): JSX.Elemen
                 <ErrorMessage>{form.formState.errors.id?.message}</ErrorMessage>
             </div>
             <div>
-                <label htmlFor={`${id}-brand`}>{t("product:brand")}</label>
+                <label htmlFor={`${formId}-brand`}>{t("product:brand")}</label>
                 <input
-                    id={`${id}-brand`}
+                    id={`${formId}-brand`}
                     type="text"
                     {...form.register("brand", {
                         required: t("product:brandIsRequired"),
@@ -190,9 +192,9 @@ export const ProductForm = ({ product, productId, onSubmit }: Props): JSX.Elemen
                 <ErrorMessage>{form.formState.errors.brand?.message}</ErrorMessage>
             </div>
             <div>
-                <label htmlFor={`${id}-name`}>{t("product:name")}</label>
+                <label htmlFor={`${formId}-name`}>{t("product:name")}</label>
                 <input
-                    id={`${id}-name`}
+                    id={`${formId}-name`}
                     type="text"
                     {...form.register("name", {
                         required: t("product:nameIsRequired")
@@ -209,54 +211,72 @@ export const ProductForm = ({ product, productId, onSubmit }: Props): JSX.Elemen
                     </tr>
                 </thead>
                 <tbody>
-                    {form.watch("stashItemOrder").map(id => (
-                        <tr key={id}>
-                            <td>
-                                <input
-                                    type="date"
-                                    {...form.register(`stashItems.${id}.expiryDate`, {
-                                        required: t("stashItem:expiryDateIsRequired"),
-                                        validate: (value: string) => {
-                                            try {
-                                                new PlainDate(value);
-                                                return true;
-                                            } catch {
-                                                return t("stashItem:expiryDateIsInvalid");
+                    {stashItemOrder.length !== 0 ? (
+                        stashItemOrder.map(id => (
+                            <tr key={id}>
+                                <td>
+                                    <label htmlFor={`${formId}-stashItems.${id}.expiryDate`}>
+                                        {t("stashItem:expiryDate")}
+                                    </label>
+                                    <input
+                                        id={`${formId}-stashItems.${id}.expiryDate`}
+                                        type="date"
+                                        {...form.register(`stashItems.${id}.expiryDate`, {
+                                            required: t("stashItem:expiryDateIsRequired"),
+                                            validate: (value: string) => {
+                                                try {
+                                                    new PlainDate(value);
+                                                    return true;
+                                                } catch {
+                                                    return t("stashItem:expiryDateIsInvalid");
+                                                }
                                             }
-                                        }
-                                    })}
-                                />
-                                <ErrorMessage>
-                                    {form.formState.errors.stashItems?.[id]?.expiryDate?.message}
-                                </ErrorMessage>
-                            </td>
-                            <td>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    {...form.register(`stashItems.${id}.quantity`, {
-                                        required: t("stashItem:quantityIsRequired"),
-                                        min: t("stashItem:quantityMustBeGreaterThanZero"),
-                                        valueAsNumber: true,
-                                        validate: (value: number) => {
-                                            try {
-                                                new Quantity(value);
-                                                return true;
-                                            } catch {
-                                                return t("stashItem:quantityIsInvalid");
+                                        })}
+                                    />
+                                    <ErrorMessage>
+                                        {form.formState.errors.stashItems?.[id]?.expiryDate?.message}
+                                    </ErrorMessage>
+                                </td>
+                                <td>
+                                    <label htmlFor={`${formId}-stashItems.${id}.quantity`}>
+                                        {t("stashItem:quantity")}
+                                    </label>
+                                    <input
+                                        id={`${formId}-stashItems.${id}.quantity`}
+                                        type="number"
+                                        min="1"
+                                        {...form.register(`stashItems.${id}.quantity`, {
+                                            required: t("stashItem:quantityIsRequired"),
+                                            min: t("stashItem:quantityMustBeGreaterThanZero"),
+                                            valueAsNumber: true,
+                                            validate: (value: number) => {
+                                                try {
+                                                    new Quantity(value);
+                                                    return true;
+                                                } catch {
+                                                    return t("stashItem:quantityIsInvalid");
+                                                }
                                             }
-                                        }
-                                    })}
-                                />
-                                <ErrorMessage>{form.formState.errors.stashItems?.[id]?.quantity?.message}</ErrorMessage>
-                            </td>
-                            <td>
-                                <button type="button" onClick={() => deleteStashItem(id)}>
-                                    <FontAwesomeIcon icon={faTrash} />
-                                </button>
+                                        })}
+                                    />
+                                    <ErrorMessage>
+                                        {form.formState.errors.stashItems?.[id]?.quantity?.message}
+                                    </ErrorMessage>
+                                </td>
+                                <td>
+                                    <button type="button" onClick={() => deleteStashItem(id)}>
+                                        <FontAwesomeIcon icon={faTrash} />
+                                    </button>
+                                </td>
+                            </tr>
+                        ))
+                    ) : (
+                        <tr>
+                            <td colSpan={3}>
+                                <p>{t("stashItem:noStashItems")}</p>
                             </td>
                         </tr>
-                    ))}
+                    )}
                 </tbody>
                 <tfoot>
                     <tr>
@@ -268,7 +288,9 @@ export const ProductForm = ({ product, productId, onSubmit }: Props): JSX.Elemen
                     </tr>
                 </tfoot>
             </table>
-            <button type="submit">{t("save")}</button>
+            <button type="submit" disabled={form.formState.isSubmitting}>
+                {t("save")}
+            </button>
         </form>
     );
 };
