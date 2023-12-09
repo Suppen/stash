@@ -3,6 +3,7 @@ import { ProductForm } from "./ProductForm";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { fakeProduct } from "../../domain/entities/fakeProduct";
+import { fakeStashItem } from "../../domain/entities/fakeStashItem";
 
 describe("Default values", () => {
     it("should not have a default value for ID", () => {
@@ -53,7 +54,7 @@ describe("Providing a product", () => {
     });
 
     it("should have the provided stash items", () => {
-        const product = fakeProduct();
+        const product = fakeProduct({ stashItems: Array.from({ length: 3 }, () => fakeStashItem()) });
         render(<ProductForm onSubmit={vi.fn()} product={product} />);
 
         const expiryDateInputs = screen.getAllByLabelText("expiryDate");
@@ -115,7 +116,7 @@ describe("Validation", () => {
 });
 
 describe("Submitting the form with no Product provided", () => {
-	it.skip("should be tested");
+    it.skip("should be tested");
 });
 
 describe("Submitting the form with a Product provided", () => {
