@@ -42,6 +42,21 @@ impl ProductRepository {
         Ok(Product::new(id, brand, name, vec![]))
     }
 
+    fn find_product_ids_from_all_stash_items(
+        tx: &Transaction,
+    ) -> Result<Vec<ProductId>, ProductRepositoryError> {
+        let mut stmt = tx.prepare("SELECT DISTINCT product_id FROM stash_items")?;
+        let mut rows = stmt.query([])?;
+
+        let mut product_ids = vec![];
+        while let Some(row) = rows.next()? {
+            let product_id = row.get::<_, ProductId>("product_id")?;
+            product_ids.push(product_id);
+        }
+
+        Ok(product_ids)
+    }
+
     fn find_by_ids(
         tx: &Transaction,
         ids: &[ProductId],
@@ -346,6 +361,21 @@ impl ProductRepository {
 }
 
 impl ProductRepositoryTrait for ProductRepository {
+    fn find_all_with_stash_items(&self) -> Result<Vec<Product>, ProductRepositoryError> {
+        let mut conn = self.conn();
+        let tx = conn.transaction()?;
+
+        // Find all product IDs in the stash item table
+        let product_ids = ProductRepository::find_product_ids_from_all_stash_items(&tx)?;
+
+        // Get the products
+        let products = ProductRepository::find_by_ids(&tx, &product_ids)?;
+
+        tx.commit()?;
+
+        Ok(products)
+    }
+
     fn find_by_id(&self, id: &ProductId) -> Result<Option<Product>, ProductRepositoryError> {
         let mut conn = self.conn();
         let tx = conn.transaction()?;
@@ -449,6 +479,29 @@ mod tests {
         setup_db(&connection).unwrap();
 
         ProductRepository::new(Arc::new(Mutex::new(connection)))
+    }
+
+    #[test]
+    fn test_find_all_with_stash_items() {
+        let repo = get_repo();
+
+        let product1 = FakeProduct::new()
+            .with_stash_items(vec![FakeStashItem::new().build()])
+            .build();
+        let product2 = FakeProduct::new()
+            .with_stash_items(vec![FakeStashItem::new().build()])
+            .build();
+        let product3 = FakeProduct::new().with_stash_items(vec![]).build();
+        repo.save(product1.clone()).unwrap();
+        repo.save(product2.clone()).unwrap();
+        repo.save(product3.clone()).unwrap();
+
+        let found_products = repo.find_all_with_stash_items().unwrap();
+
+        assert_eq!(found_products.len(), 2);
+        assert!(found_products.contains(&product1));
+        assert!(found_products.contains(&product2));
+        assert!(!found_products.contains(&product3));
     }
 
     #[test]

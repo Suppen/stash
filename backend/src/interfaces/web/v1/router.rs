@@ -1,15 +1,19 @@
 use actix_web::web;
 
 use super::handlers::{
-    add_stash_item, create_product, delete_product, delete_stash_item, get_product,
-    get_product_by_stash_item_id, get_products_expiring_before, get_stash_items, update_product,
-    update_stash_item,
+    add_stash_item, create_product, delete_product, delete_stash_item,
+    get_all_products_with_stash_items, get_product, get_product_by_stash_item_id,
+    get_products_expiring_before, get_stash_items, update_product, update_stash_item,
 };
 
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/v1/products")
             .route("", web::post().to(create_product))
+            .route(
+                "/with_stash_items",
+                web::get().to(get_all_products_with_stash_items),
+            )
             .route(
                 "/by_stash_item_id/{stash_item_id}",
                 web::get().to(get_product_by_stash_item_id),

@@ -2,9 +2,9 @@ use std::{collections::HashSet, sync::Arc};
 
 use crate::{
     application::use_cases::{
-        AddStashItem, CreateProduct, DeleteProduct, DeleteStashItem, GetProduct,
-        GetProductByStashItemId, GetProductsExpiringBefore, GetStashItems, UpdateProduct,
-        UpdateStashItem,
+        AddStashItem, CreateProduct, DeleteProduct, DeleteStashItem, GetAllProductsWithStashItems,
+        GetProduct, GetProductByStashItemId, GetProductsExpiringBefore, GetStashItems,
+        UpdateProduct, UpdateStashItem,
     },
     domain::{
         entities::{Product, StashItem},
@@ -194,6 +194,12 @@ impl GetProductsExpiringBefore for ProductService {
     ) -> Result<Vec<Product>, ProductRepositoryError> {
         self.product_repository
             .find_expiring_in_interval(None, Some(before))
+    }
+}
+
+impl GetAllProductsWithStashItems for ProductService {
+    fn get_all_products_with_stash_items(&self) -> Result<Vec<Product>, ProductRepositoryError> {
+        self.product_repository.find_all_with_stash_items()
     }
 }
 
@@ -523,6 +529,26 @@ mod tests {
         let result = product_service
             .products_expiring_before(NaiveDate::from_ymd_opt(2023, 01, 02).unwrap())
             .unwrap();
+
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0], product);
+    }
+
+    #[test]
+    fn test_get_all_products_with_stash_items() {
+        let product = FakeProduct::new()
+            .with_stash_items(vec![FakeStashItem::new().build()])
+            .build();
+        let returned_product = product.clone();
+
+        let mut product_repository = MockProductRepository::new();
+        product_repository
+            .expect_find_all_with_stash_items()
+            .returning(move || Ok(vec![returned_product.clone()]));
+
+        let product_service = ProductService::new(Arc::new(Box::new(product_repository)));
+
+        let result = product_service.get_all_products_with_stash_items().unwrap();
 
         assert_eq!(result.len(), 1);
         assert_eq!(result[0], product);
