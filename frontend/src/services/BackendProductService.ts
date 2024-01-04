@@ -18,6 +18,15 @@ export class BackendProductService implements ProductService {
         this.#baseUrl = baseUrl;
     }
 
+    async getAllProductsWithStashItems(): Promise<Product[]> {
+        return createJSONFetcher(
+            data => productDTOSchema.array().parse(data).map(toProduct),
+            this.#fetcher
+        )(`${this.#baseUrl}/products/with_stash_items`);
+
+        // There is no known way for this to error
+    }
+
     async getProduct(productId: Product["id"]): Promise<Product | null> {
         try {
             return await createJSONFetcher(

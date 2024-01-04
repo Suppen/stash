@@ -14,7 +14,13 @@ export const Router = ({ productService }: Props): JSX.Element => {
             createBrowserRouter([
                 {
                     path: "/",
-                    element: <Frontpage />
+                    element: (
+                        <Frontpage
+                            getAllProductsWithStashItems={productService.getAllProductsWithStashItems.bind(
+                                productService
+                            )}
+                        />
+                    )
                 },
                 {
                     path: "/products/:id",

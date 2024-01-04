@@ -17,6 +17,24 @@ beforeEach(() => {
     productService = new BackendProductService({ fetcher: fetcher as typeof fetch, baseUrl });
 });
 
+describe("getAllProductsWithStashItems", () => {
+    it("should call the correct URL with the correct data", async () => {
+        fetcher.mockResolvedValueOnce(Response.json([fakeProductDTO()]));
+
+        await productService.getAllProductsWithStashItems();
+        expect(fetcher).toHaveBeenCalledWith(`${baseUrl}/products/with_stash_items`);
+    });
+
+    it("should return the products", async () => {
+        const products = [fakeProduct()];
+        const productDTOs = products.map(fromProduct);
+        fetcher.mockResolvedValueOnce(Response.json(productDTOs));
+
+        const result = await productService.getAllProductsWithStashItems();
+        expect(result).toEqual(products);
+    });
+});
+
 describe("getProduct", () => {
     it("should call the correct URL with the correct data", async () => {
         const productId = new ProductId("ID");

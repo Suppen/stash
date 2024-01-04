@@ -4,6 +4,15 @@ import PlainDate from "../domain/valueObjects/PlainDate";
 
 export type ProductService = {
     /**
+     * Gets all products with at least one stash item
+     *
+     * @returns All products with at least one stash item
+     *
+     * @throws Whatever the implementation throws
+     */
+    getAllProductsWithStashItems: () => Promise<Product[]>;
+
+    /**
      * Gets a single product by its ID
      *
      * @param productId ID of the product to get
