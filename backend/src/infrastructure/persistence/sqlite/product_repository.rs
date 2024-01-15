@@ -323,7 +323,7 @@ impl ProductRepository {
         product_id: &ProductId,
     ) -> Result<Vec<StashItem>, ProductRepositoryError> {
         let mut stmt = tx.prepare(
-            "SELECT id, quantity, expiry_date FROM stash_items WHERE product_id = :product_id",
+            "SELECT id, quantity, expiry_date FROM stash_items WHERE product_id = :product_id ORDER BY expiry_date ASC",
         )?;
         let mut rows = stmt.query(named_params! { ":product_id": product_id })?;
 
