@@ -40,6 +40,10 @@ await i18next.use(initReactI18next).init({
                 brandIsInvalid: "Merke er ugyldig",
                 newProduct: "Nytt produkt",
                 updateProduct: "Oppdater produkt"
+            },
+            productTable: {
+                totalQuantity: "Totalt antall",
+                nextExpiryDate: "Neste utløpsdato"
             }
         }
     }

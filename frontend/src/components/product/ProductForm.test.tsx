@@ -55,15 +55,15 @@ describe("Providing a product", () => {
 
     it("should have the provided stash items", () => {
         const product = fakeProduct({ stashItems: Array.from({ length: 3 }, () => fakeStashItem()) });
-        render(<ProductForm onSubmit={vi.fn()} product={product} />);
+        const { container } = render(<ProductForm onSubmit={vi.fn()} product={product} />);
 
-        const expiryDateInputs = screen.getAllByLabelText("expiryDate");
+        const expiryDateInputs = container.querySelectorAll("[name$=expiryDate]");
         expect(expiryDateInputs).toHaveLength(product.stashItems.length);
         expiryDateInputs.forEach((expiryDateInput, index) => {
             expect(expiryDateInput).toHaveValue(product.stashItems[index].expiryDate.toISOString());
         });
 
-        const quantityInputs = screen.getAllByLabelText("quantity");
+        const quantityInputs = document.querySelectorAll("[name$=quantity]");
         expect(quantityInputs).toHaveLength(product.stashItems.length);
         quantityInputs.forEach((quantityInput, index) => {
             expect(quantityInput).toHaveValue(product.stashItems[index].quantity.value());

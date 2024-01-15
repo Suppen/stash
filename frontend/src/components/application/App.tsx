@@ -15,7 +15,7 @@ const App = (): JSX.Element => {
 
     return (
         <QueryClientProvider client={queryClient}>
-            <AutoFullscreen />
+            {window.screen.width === 800 ? <AutoFullscreen /> : null}
             <div className="app">
                 <Router productService={productService} />
             </div>

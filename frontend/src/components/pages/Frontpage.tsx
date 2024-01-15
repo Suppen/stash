@@ -5,6 +5,7 @@ import { useNavigate } from "react-router";
 import { DataGrid } from "@mui/x-data-grid";
 import { Product } from "../../domain/entities/Product";
 import { useQuery } from "@tanstack/react-query";
+import { IdScanField } from "../product/IdScanField";
 
 type Props = {
     getAllProductsWithStashItems: () => Promise<Product[]>;
@@ -14,8 +15,6 @@ export const Frontpage = ({ getAllProductsWithStashItems }: Props): JSX.Element 
     const { t } = useTranslation();
 
     const navigate = useNavigate();
-
-    const [id, setId] = useState<string>("");
 
     const {
         data: products,
@@ -28,47 +27,39 @@ export const Frontpage = ({ getAllProductsWithStashItems }: Props): JSX.Element 
 
     return (
         <div>
-            <form
-                className="frontpage"
-                onSubmit={e => {
-                    e.preventDefault();
-                    navigate(`/products/${id}`);
-                }}
-            >
+            <div className="frontpage">
                 <div>
-                    <TextField
-                        variant="outlined"
-                        fullWidth
-                        label={t("product:productId")}
-                        value={id}
-                        onChange={e => {
-                            setId(e.target.value);
+                    <IdScanField
+                        onScan={id => {
+                            navigate(`/products/${id.toString()}`);
                         }}
-                        autoFocus
                     />
                 </div>
-            </form>
+            </div>
             {isLoading ? (
                 <div>Loading...</div>
             ) : error !== null ? (
                 <div>Error: {String(error)}</div>
             ) : (
                 <DataGrid
-                    rows={products!}
+                    rows={products!.map(product => ({ ...product, id: product.id.toString() }))}
                     columns={[
                         {
                             field: "brand",
-                            headerName: t("product:brand")
+                            headerName: t("product:brand"),
+                            flex: 0.5
                         },
                         {
                             field: "name",
-                            headerName: t("product:name")
+                            headerName: t("product:name"),
+                            flex: 1
                         },
                         {
                             field: "totalQuantity",
                             headerName: t("productTable:totalQuantity"),
                             valueGetter: params =>
-                                params.row.stashItems.reduce((acc, stashItem) => acc + stashItem.quantity.valueOf(), 0)
+                                params.row.stashItems.reduce((acc, stashItem) => acc + stashItem.quantity.valueOf(), 0),
+                            flex: 0.5
                         },
                         {
                             field: "nextExpiryDate",
@@ -80,7 +71,8 @@ export const Frontpage = ({ getAllProductsWithStashItems }: Props): JSX.Element 
                                         return expiryDate;
                                     }
                                     return acc;
-                                }, params.row.stashItems[0].expiryDate.toISOString())
+                                }, params.row.stashItems[0].expiryDate.toISOString()),
+                            flex: 1
                         }
                     ]}
                     initialState={{

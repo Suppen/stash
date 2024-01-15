@@ -12,11 +12,14 @@ export const AutoFullscreen = (): null => {
                 clearTimeout(inactivityTimer);
             }
 
-            inactivityTimer = setTimeout(() => {
-                if (isFullscreen()) {
-                    document.exitFullscreen().catch(console.error);
-                }
-            }, 3 * 1000);
+            inactivityTimer = setTimeout(
+                () => {
+                    if (isFullscreen()) {
+                        document.exitFullscreen().catch(console.error);
+                    }
+                },
+                1 * 60 * 1000 // 1 minute
+            );
         };
 
         /** Listen for input events to reset the timer. */
