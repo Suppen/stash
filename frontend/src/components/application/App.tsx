@@ -5,6 +5,7 @@ import "../../i18n/i18n";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Router } from "./Router";
 import { AutoFullscreen } from "./AutoFullscreen";
+import { ToastContainer } from "react-toastify";
 
 const App = (): JSX.Element => {
     const queryClient = new QueryClient();
@@ -19,6 +20,7 @@ const App = (): JSX.Element => {
             <div className="app">
                 <Router productService={productService} />
             </div>
+            <ToastContainer />
         </QueryClientProvider>
     );
 };

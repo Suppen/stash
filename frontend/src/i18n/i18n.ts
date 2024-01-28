@@ -14,7 +14,8 @@ await i18next.use(initReactI18next).init({
                 loading: "Laster",
                 unknownError: "Ukjent feil",
                 actions: "Handlinger",
-                delete: "Slett"
+                delete: "Slett",
+                unknownErrorOccurred: "En ukjent feil oppstod"
             },
             stashItem: {
                 quantity: "Antall",
@@ -39,7 +40,9 @@ await i18next.use(initReactI18next).init({
                 idIsInvalid: "ID er ugyldig",
                 brandIsInvalid: "Merke er ugyldig",
                 newProduct: "Nytt produkt",
-                updateProduct: "Oppdater produkt"
+                updateProduct: "Oppdater produkt",
+                productCreated: "Produkt opprettet",
+                productUpdated: "Produkt oppdatert"
             },
             productTable: {
                 totalQuantity: "Totalt antall",

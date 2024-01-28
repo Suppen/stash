@@ -6,6 +6,7 @@ import { ProductForm } from "../product/ProductForm";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Box, Typography } from "@mui/material";
+import { toast } from "react-toastify";
 
 export type Props = {
     getProduct: (productId: ProductId) => Promise<Product | null>;
@@ -57,8 +58,14 @@ export const ProductPage = ({ getProduct, createProduct, updateProduct }: Props)
                     <ProductForm
                         productId={productId}
                         onSubmit={async product => {
-                            await createProduct(product);
-                            await invalidateQueries();
+                            try {
+                                await createProduct(product);
+                                toast.success(t("product:productCreated"));
+                                await invalidateQueries();
+                            } catch (e) {
+                                console.error(e);
+                                toast.error(t("unknownErrorOccurred"));
+                            }
                         }}
                     />
                 </>
@@ -68,8 +75,14 @@ export const ProductPage = ({ getProduct, createProduct, updateProduct }: Props)
                     <ProductForm
                         product={product}
                         onSubmit={async product => {
-                            await updateProduct(product);
-                            await invalidateQueries();
+                            try {
+                                await updateProduct(product);
+                                toast.success(t("product:productUpdated"));
+                                await invalidateQueries();
+                            } catch (e) {
+                                console.error(e);
+                                toast.error(t("unknownErrorOccurred"));
+                            }
                         }}
                     />
                 </>
