@@ -20,6 +20,7 @@ import TableRow from "@mui/material/TableRow";
 import TableCell from "@mui/material/TableCell";
 import TableFooter from "@mui/material/TableFooter";
 import { Grid, Typography } from "@mui/material";
+import { Link } from "react-router-dom";
 
 export type Props = {
     onSubmit: (product: Product) => void | Promise<void>;
@@ -342,9 +343,20 @@ export const ProductForm = ({ product, productId, onSubmit }: Props): JSX.Elemen
                     </TableFooter>
                 </Table>
             </TableContainer>
-            <Button variant="contained" color="success" type="submit" disabled={form.formState.isSubmitting}>
-                {t("save")}
-            </Button>
+            <Box sx={{ display: "flex", justifyContent: "space-between", marginTop: "1rem" }}>
+                <Button variant="contained" color="success" type="submit" disabled={form.formState.isSubmitting}>
+                    {t("save")}
+                </Button>
+                <Button
+                    component={Link}
+                    variant="contained"
+                    color={form.formState.isDirty ? "error" : undefined}
+                    to="/"
+                    disabled={form.formState.isSubmitting}
+                >
+                    {t("back")}
+                </Button>
+            </Box>
         </Box>
     );
 };

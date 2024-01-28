@@ -4,28 +4,44 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { fakeProduct } from "../../domain/entities/fakeProduct";
 import { fakeStashItem } from "../../domain/entities/fakeStashItem";
+import { RouterProvider, createMemoryRouter } from "react-router-dom";
+
+const renderWithContext = (ui: Parameters<typeof render>[0], options?: Omit<Parameters<typeof render>[1], "wrapper">) =>
+    render(ui, {
+        ...options,
+        wrapper: ({ children }) => (
+            <RouterProvider
+                router={createMemoryRouter([
+                    {
+                        path: "/",
+                        element: children
+                    }
+                ])}
+            />
+        )
+    });
 
 describe("Default values", () => {
     it("should not have a default value for ID", () => {
-        render(<ProductForm onSubmit={vi.fn()} />);
+        renderWithContext(<ProductForm onSubmit={vi.fn()} />);
 
         expect(screen.getByLabelText("id")).toHaveValue("");
     });
 
     it("should not have a default value for brand", () => {
-        render(<ProductForm onSubmit={vi.fn()} />);
+        renderWithContext(<ProductForm onSubmit={vi.fn()} />);
 
         expect(screen.getByLabelText("brand")).toHaveValue("");
     });
 
     it("should not have a default value for name", () => {
-        render(<ProductForm onSubmit={vi.fn()} />);
+        renderWithContext(<ProductForm onSubmit={vi.fn()} />);
 
         expect(screen.getByLabelText("name")).toHaveValue("");
     });
 
     it("should not have any stash items by default", () => {
-        render(<ProductForm onSubmit={vi.fn()} />);
+        renderWithContext(<ProductForm onSubmit={vi.fn()} />);
 
         expect(screen.getByText("noStashItems")).toBeInTheDocument();
     });
@@ -34,28 +50,28 @@ describe("Default values", () => {
 describe("Providing a product", () => {
     it("should have the provided ID", () => {
         const product = fakeProduct();
-        render(<ProductForm onSubmit={vi.fn()} product={product} />);
+        renderWithContext(<ProductForm onSubmit={vi.fn()} product={product} />);
 
         expect(screen.getByLabelText("id")).toHaveValue(product.id.value());
     });
 
     it("should have the provided brand", () => {
         const product = fakeProduct();
-        render(<ProductForm onSubmit={vi.fn()} product={product} />);
+        renderWithContext(<ProductForm onSubmit={vi.fn()} product={product} />);
 
         expect(screen.getByLabelText("brand")).toHaveValue(product.brand.value());
     });
 
     it("should have the provided name", () => {
         const product = fakeProduct();
-        render(<ProductForm onSubmit={vi.fn()} product={product} />);
+        renderWithContext(<ProductForm onSubmit={vi.fn()} product={product} />);
 
         expect(screen.getByLabelText("name")).toHaveValue(product.name);
     });
 
     it("should have the provided stash items", () => {
         const product = fakeProduct({ stashItems: Array.from({ length: 3 }, () => fakeStashItem()) });
-        const { container } = render(<ProductForm onSubmit={vi.fn()} product={product} />);
+        const { container } = renderWithContext(<ProductForm onSubmit={vi.fn()} product={product} />);
 
         const expiryDateInputs = container.querySelectorAll("[name$=expiryDate]");
         expect(expiryDateInputs).toHaveLength(product.stashItems.length);
@@ -74,7 +90,7 @@ describe("Providing a product", () => {
 describe("Providing a product ID", () => {
     it("should have the provided ID", () => {
         const productId = fakeProduct().id;
-        render(<ProductForm onSubmit={vi.fn()} productId={productId} />);
+        renderWithContext(<ProductForm onSubmit={vi.fn()} productId={productId} />);
 
         expect(screen.getByLabelText("id")).toHaveValue(productId.value());
     });
@@ -84,7 +100,7 @@ describe("Validation", () => {
     it("requires an ID", async () => {
         const onSubmit = vi.fn();
 
-        render(<ProductForm onSubmit={onSubmit} />);
+        renderWithContext(<ProductForm onSubmit={onSubmit} />);
 
         await userEvent.click(screen.getByText("save"));
 
@@ -95,7 +111,7 @@ describe("Validation", () => {
     it("requires a brand", async () => {
         const onSubmit = vi.fn();
 
-        render(<ProductForm onSubmit={onSubmit} />);
+        renderWithContext(<ProductForm onSubmit={onSubmit} />);
 
         await userEvent.click(screen.getByText("save"));
 
@@ -106,7 +122,7 @@ describe("Validation", () => {
     it("requires a name", async () => {
         const onSubmit = vi.fn();
 
-        render(<ProductForm onSubmit={onSubmit} />);
+        renderWithContext(<ProductForm onSubmit={onSubmit} />);
 
         await userEvent.click(screen.getByText("save"));
 
@@ -124,7 +140,7 @@ describe("Submitting the form with a Product provided", () => {
         const onSubmit = vi.fn();
         const expectedProduct = fakeProduct();
 
-        render(<ProductForm onSubmit={onSubmit} product={expectedProduct} />);
+        renderWithContext(<ProductForm onSubmit={onSubmit} product={expectedProduct} />);
 
         await userEvent.click(screen.getByText("save"));
 
